@@ -25,6 +25,8 @@ import lombok.RequiredArgsConstructor;
 import javax.servlet.http.Cookie;
 import java.sql.Date;
 
+import static io.tosit.okdp.spark.authc.utils.CompressionUtils.compressToString;
+import static io.tosit.okdp.spark.authc.utils.CompressionUtils.decompress;
 import static io.tosit.okdp.spark.authc.utils.JsonUtils.loadJsonFromString;
 import static io.tosit.okdp.spark.authc.utils.TokenUtils.payload;
 import static java.time.Instant.now;
@@ -40,10 +42,10 @@ public class CookieTokenStore implements TokenStore {
     private Integer cookieMaxAgeSeconds;
 
     /**
-     * Save the access token in a {@link Cookie}
+     * Compress and save the access token in a {@link Cookie}
      *
      * @param accessToken the access token response from the oidc server
-     * @return {@link Cookie} containing the access token
+     * @return {@link Cookie} containing the compressed access token
      */
     @Override
     @SuppressWarnings("unchecked")
@@ -55,7 +57,8 @@ public class CookieTokenStore implements TokenStore {
                 .expiresIn(accessToken.expiresIn())
                 .expiresAt(Date.from(now().plusSeconds(accessToken.expiresIn())))
                 .build());
-        Cookie cookie = new Cookie(cookieName, savedToken);
+        // Compress the access token to overcome 4KB cookie limit (depends on the OIDC providers and their config)
+        Cookie cookie = new Cookie(cookieName, compressToString(savedToken));
         cookie.setMaxAge(cookieMaxAgeSeconds);
         // Additional enforcements
         cookie.setDomain(cookieDomain);
@@ -66,14 +69,14 @@ public class CookieTokenStore implements TokenStore {
     }
 
     /**
-     * Load the access token in a {@link PersistedToken}
+     * Uncompress and load the access token in a {@link PersistedToken}
      *
      * @param value the access token value saved in the {@link Cookie}
      * @return {@link PersistedToken} containing the access token
      */
     @Override
     public PersistedToken readToken(String value) {
-        return loadJsonFromString(value, PersistedToken.class);
+        return loadJsonFromString(decompress(value), PersistedToken.class);
     }
 
 }

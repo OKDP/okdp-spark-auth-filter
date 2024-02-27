@@ -32,5 +32,6 @@ public interface Constants {
     int AUTH_COOKE_DEFAULT_MAX_AGE_SECONDS = 12 * 60 * 60;
 
     /* Encoders */
+    Base64.Encoder BASE64_ENCODER = Base64.getEncoder();
     Base64.Decoder BASE64_DECODER = Base64.getDecoder();
 }
