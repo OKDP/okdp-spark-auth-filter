@@ -22,6 +22,7 @@ import io.tosit.okdp.spark.authc.config.HttpSecurityConfig;
 import io.tosit.okdp.spark.authc.config.OidcConfig;
 import io.tosit.okdp.spark.authc.model.AccessToken;
 import io.tosit.okdp.spark.authc.model.WellKnownConfiguration;
+import io.tosit.okdp.spark.authc.provider.store.CookieTokenStore;
 import io.tosit.okdp.spark.authc.utils.JsonUtils;
 import org.apache.hc.client5.http.fluent.Request;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +34,7 @@ import org.mockito.MockedStatic;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.URL;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -90,6 +92,7 @@ public class OidcAuthProviderTest implements Constants, CommonTest {
             authProvider = HttpSecurityConfig
                     .create(oidcConfig)
                     .authorizeRequests(".*/\\.js", ".*/\\.png")
+                    .tokenStore(CookieTokenStore.of(AUTH_COOKE_NAME, new URL(redirectUri).getHost(), 60))
                     .configure();
         }
     }

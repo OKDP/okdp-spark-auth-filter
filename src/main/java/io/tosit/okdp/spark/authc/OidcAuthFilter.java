@@ -18,16 +18,24 @@ package io.tosit.okdp.spark.authc;
 import io.tosit.okdp.spark.authc.config.Constants;
 import io.tosit.okdp.spark.authc.config.HttpSecurityConfig;
 import io.tosit.okdp.spark.authc.config.OidcConfig;
+import io.tosit.okdp.spark.authc.exception.FilterInitializationException;
 import io.tosit.okdp.spark.authc.model.AccessToken;
 import io.tosit.okdp.spark.authc.model.AccessTokenPayload;
+import io.tosit.okdp.spark.authc.model.PersistedToken;
 import io.tosit.okdp.spark.authc.model.WellKnownConfiguration;
 import io.tosit.okdp.spark.authc.provider.AuthProvider;
+import io.tosit.okdp.spark.authc.provider.store.CookieTokenStore;
+import io.tosit.okdp.spark.authc.utils.HttpAuthenticationUtils;
 import io.tosit.okdp.spark.authc.utils.exception.Try;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.servlet.*;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Optional;
 
 import static io.tosit.okdp.spark.authc.utils.JsonUtils.loadJsonFromUrl;
 import static io.tosit.okdp.spark.authc.utils.PreconditionsUtils.checkNotNull;
@@ -52,6 +60,9 @@ public class OidcAuthFilter implements Filter, Constants {
                 .orElse(System.getenv("AUTH_REDIRECT_URI")), AUTH_REDIRECT_URI);
         String scope = checkNotNull(ofNullable(filterConfig.getInitParameter(AUTH_SCOPE))
                 .orElse(System.getenv("AUTH_SCOPE")), AUTH_SCOPE);
+        int cookieMaxAgeSeconds = Integer.parseInt(ofNullable(filterConfig.getInitParameter(AUTH_COOKE_MAX_AGE_SECONDS))
+                .orElse(ofNullable(System.getenv("AUTH_COOKE_MAX_AGE_SECONDS"))
+                        .orElse(String.valueOf(AUTH_COOKE_DEFAULT_MAX_AGE_SECONDS))));
 
         log.info("Initializing OIDC Auth filter ({}: <{}>,  {}: <{}>) ...", AUTH_ISSUER_URI, issuerUri, AUTH_CLIENT_ID, clientId);
 
@@ -72,10 +83,16 @@ public class OidcAuthFilter implements Filter, Constants {
                 oidcConfig.wellKnownConfiguration().userInfoEndpoint(),
                 oidcConfig.wellKnownConfiguration().scopesSupported());
 
-        log.info("Initializing OIDC Auth Provider ...");
-        authProvider = HttpSecurityConfig.create(oidcConfig)
-                .authorizeRequests(".*/.*\\.css", ".*/.*\\.js", ".*/.*\\.png")
-                .configure();
+        try {
+            log.info("Initializing OIDC Auth Provider (access token cookie based storage/cookie name: {}, max-age: {}) ...", AUTH_COOKE_NAME, cookieMaxAgeSeconds);
+            authProvider = HttpSecurityConfig.create(oidcConfig)
+                    .authorizeRequests(".*/.*\\.css", ".*/.*\\.js", ".*/.*\\.png")
+                    .tokenStore(CookieTokenStore.of(AUTH_COOKE_NAME,
+                            new URL(oidcConfig.redirectUri()).getHost(), cookieMaxAgeSeconds))
+                    .configure();
+        } catch (MalformedURLException e) {
+            throw new FilterInitializationException(e.getMessage(), e);
+        }
     }
 
     @Override
@@ -84,6 +101,25 @@ public class OidcAuthFilter implements Filter, Constants {
         if (authProvider.isAuthorized(servletRequest)) {
             filterChain.doFilter(servletRequest, servletResponse);
             return;
+        }
+
+        // Extract the access token from the http cookie if present
+        Optional<String> maybeCookie = HttpAuthenticationUtils.getCookieValue(AUTH_COOKE_NAME, servletRequest);
+        if (maybeCookie.isPresent()) {
+            PersistedToken persistedToken = authProvider.httpSecurityConfig()
+                    .tokenStore()
+                    .readToken(maybeCookie.get());
+
+            if (persistedToken.isExpired()) {
+                log.info("The user {} token was expired, renewing ... ", persistedToken.accessTokenPayload().email());
+                AccessToken accessToken = Try.of(() -> authProvider.refreshToken(persistedToken.refreshToken()))
+                        .onException(e -> ((HttpServletResponse) servletResponse).setStatus(e.getHttpStatusCode()));
+                Cookie cookie = authProvider.httpSecurityConfig().tokenStore().save(accessToken);
+                ((HttpServletResponse) servletResponse).addCookie(cookie);
+            }
+            filterChain.doFilter(servletRequest, servletResponse);
+            return;
+
         }
 
         if (servletRequest.getParameter("code") == null) {
@@ -97,6 +133,8 @@ public class OidcAuthFilter implements Filter, Constants {
 
             AccessTokenPayload payload = payload(accessToken.accessToken());
             log.info("Successfully authenticated user: {} (roles: {}, groups: {})", payload.email(), payload.roles(), payload.groups());
+            Cookie cookie = authProvider.httpSecurityConfig().tokenStore().save(accessToken);
+            ((HttpServletResponse) servletResponse).addCookie(cookie);
             // Redirect the user from the browser (client) side (the authz 'code' becomes invalid)
             servletResponse.getWriter().print("<script type=\"text/javascript\">window.location.href = '/home'</script>");
         }

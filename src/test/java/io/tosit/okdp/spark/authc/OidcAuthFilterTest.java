@@ -17,6 +17,7 @@ package io.tosit.okdp.spark.authc;
 
 import io.tosit.okdp.spark.authc.common.CommonTest;
 import io.tosit.okdp.spark.authc.config.Constants;
+import io.tosit.okdp.spark.authc.model.PersistedToken;
 import io.tosit.okdp.spark.authc.model.WellKnownConfiguration;
 import io.tosit.okdp.spark.authc.provider.OidcAuthProvider;
 import io.tosit.okdp.spark.authc.utils.JsonUtils;
@@ -32,6 +33,7 @@ import org.mockito.MockedStatic;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -41,6 +43,7 @@ import java.lang.reflect.Field;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.*;
 
 @Suite
@@ -129,7 +132,7 @@ public class OidcAuthFilterTest implements Constants, CommonTest {
     }
 
     @Test
-    void should_run_authentication_flow_authz() throws IOException, ServletException {
+    void should_run_authentication_flow_authz__and_save_access_token_in_cookie() throws IOException, ServletException {
         // Given
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletResponse response = mock(HttpServletResponse.class);
@@ -144,6 +147,12 @@ public class OidcAuthFilterTest implements Constants, CommonTest {
 
         // When
         oidcAuthFilter.doFilter(request, response, chain);
+
+        // Then
+        ArgumentCaptor<Cookie> captor = ArgumentCaptor.forClass(Cookie.class);
+        verify(response).addCookie(captor.capture());
+        PersistedToken persistedToken = oidcAuthProvider.httpSecurityConfig().tokenStore().readToken(captor.getValue().getValue());
+        assertNotNull(persistedToken);
 
         // Then
         assertThat(out.toString()).isEqualTo("<script type=\"text/javascript\">window.location.href = '/home'</script>");
