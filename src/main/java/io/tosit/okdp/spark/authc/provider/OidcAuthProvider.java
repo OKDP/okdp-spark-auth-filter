@@ -80,8 +80,7 @@ public class OidcAuthProvider implements Constants, AuthProvider {
     public AccessToken requestAccessToken(String code) throws AuthenticationException {
         checkNotNull(code, "code");
 
-        Request request = Request.post(httpSecurityConfig.oidcConfig().wellKnownConfiguration().tokenEndpoint()
-                        .replace("https", "http"))
+        Request request = Request.post(httpSecurityConfig.oidcConfig().wellKnownConfiguration().tokenEndpoint())
                 .addHeader("cache-control", "no-cache")
                 .addHeader("content-type", "application/x-www-form-urlencoded")
                 .bodyForm(Form.form()
@@ -103,8 +102,7 @@ public class OidcAuthProvider implements Constants, AuthProvider {
     @Override
     public AccessToken refreshToken(String refreshToken) throws AuthenticationException {
         checkNotNull(refreshToken, "refresh_token");
-        Request request = Request.post(httpSecurityConfig.oidcConfig().wellKnownConfiguration().tokenEndpoint()
-                        .replace("https", "http"))
+        Request request = Request.post(httpSecurityConfig.oidcConfig().wellKnownConfiguration().tokenEndpoint())
                 .addHeader("cache-control", "no-cache")
                 .addHeader("content-type", "application/x-www-form-urlencoded")
                 .bodyForm(Form.form()

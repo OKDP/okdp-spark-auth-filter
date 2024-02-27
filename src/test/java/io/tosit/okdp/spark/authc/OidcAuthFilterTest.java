@@ -55,6 +55,7 @@ public class OidcAuthFilterTest implements Constants, CommonTest {
     private final String clientSecret = "Not@SecurePassw0rd";
     private final String redirectUri = "https://spark.okdp.local/home";
     private final String scope = "openid+profile+email+groups+offline_access";
+    private final String cookieEncryptionKey = "E132A72E815F496FFC49B3EC876754F4";
     @InjectMocks
     private final OidcAuthFilter oidcAuthFilter = new OidcAuthFilter();
     private final String accessTokenResponse = "{\n" +
@@ -84,6 +85,7 @@ public class OidcAuthFilterTest implements Constants, CommonTest {
             when(filterConfig.getInitParameter(AUTH_CLIENT_ID)).thenReturn(clientId);
             when(filterConfig.getInitParameter(AUTH_CLIENT_SECRET)).thenReturn(clientSecret);
             when(filterConfig.getInitParameter(AUTH_SCOPE)).thenReturn(scope);
+            when(filterConfig.getInitParameter(AUTH_COOKIE_ENCRYPTION_KEY)).thenReturn(cookieEncryptionKey);
             oidcAuthFilter.init(filterConfig);
         }
 

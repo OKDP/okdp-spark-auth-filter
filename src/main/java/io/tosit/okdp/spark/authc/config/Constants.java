@@ -31,6 +31,12 @@ public interface Constants {
     String AUTH_COOKE_MAX_AGE_SECONDS = "cookie-max-age-seconds";
     int AUTH_COOKE_DEFAULT_MAX_AGE_SECONDS = 12 * 60 * 60;
 
+    /* Cookie encryption properties for token cookie store */
+
+    String AUTH_COOKIE_ENCRYPTION_KEY = "cookie-cipher-secret-key";
+    String CIPHER_TRANSFORMATION = "AES/GCM/NoPadding";
+    String AES_ENCRYPTION_ALGORITHEM = "AES";
+
     /* Encoders */
     Base64.Encoder BASE64_ENCODER = Base64.getEncoder();
     Base64.Decoder BASE64_DECODER = Base64.getDecoder();

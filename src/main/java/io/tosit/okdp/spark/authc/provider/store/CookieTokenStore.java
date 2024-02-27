@@ -27,6 +27,8 @@ import java.sql.Date;
 
 import static io.tosit.okdp.spark.authc.utils.CompressionUtils.compressToString;
 import static io.tosit.okdp.spark.authc.utils.CompressionUtils.decompress;
+import static io.tosit.okdp.spark.authc.utils.EncryptionUtils.decrypt;
+import static io.tosit.okdp.spark.authc.utils.EncryptionUtils.encryptToString;
 import static io.tosit.okdp.spark.authc.utils.JsonUtils.loadJsonFromString;
 import static io.tosit.okdp.spark.authc.utils.TokenUtils.payload;
 import static java.time.Instant.now;
@@ -39,13 +41,15 @@ public class CookieTokenStore implements TokenStore {
     @NonNull
     private String cookieDomain;
     @NonNull
+    private String encryptionKey;
+    @NonNull
     private Integer cookieMaxAgeSeconds;
 
     /**
-     * Compress and save the access token in a {@link Cookie}
+     * Compress, encrypt and save the access token in a {@link Cookie}
      *
      * @param accessToken the access token response from the oidc server
-     * @return {@link Cookie} containing the compressed access token
+     * @return {@link Cookie} containing the compressed and encrypted access token
      */
     @Override
     @SuppressWarnings("unchecked")
@@ -58,25 +62,26 @@ public class CookieTokenStore implements TokenStore {
                 .expiresAt(Date.from(now().plusSeconds(accessToken.expiresIn())))
                 .build());
         // Compress the access token to overcome 4KB cookie limit (depends on the OIDC providers and their config)
-        Cookie cookie = new Cookie(cookieName, compressToString(savedToken));
+        // Encrypt the content to prevent token exposure
+        Cookie cookie = new Cookie(cookieName, encryptToString(compressToString(savedToken), encryptionKey));
         cookie.setMaxAge(cookieMaxAgeSeconds);
         // Additional enforcements
         cookie.setDomain(cookieDomain);
         cookie.setHttpOnly(true);
-        //cookie.setSecure(true);
+        cookie.setSecure(true);
         cookie.setPath("/;SameSite=Strict;");
         return cookie;
     }
 
     /**
-     * Uncompress and load the access token in a {@link PersistedToken}
+     * Un-encrypt, uncompress and load the access token in a {@link PersistedToken}
      *
      * @param value the access token value saved in the {@link Cookie}
      * @return {@link PersistedToken} containing the access token
      */
     @Override
     public PersistedToken readToken(String value) {
-        return loadJsonFromString(decompress(value), PersistedToken.class);
+        return loadJsonFromString(decompress(decrypt(value, encryptionKey)), PersistedToken.class);
     }
 
 }

@@ -59,6 +59,7 @@ public class OidcAuthProviderTest implements Constants, CommonTest {
         String issuerUri = "https://dex.okdp.local/dex";
         String clientSecret = "Not@SecurePassw0rd";
         String scope = "openid+profile+email+groups+offline_access";
+        String cookieEncryptionKey = "E132A72E815F496FFC49B3EC876754F4";
         accessTokenResponse = "{\n" +
                 "  \"access_token\": \"eyJhbGciOiJSUzI1NiIsImtpZCI6IjBkZWEwOTM5NDZjNDIwZjA4YTZjNTVmY2MxYTFhYTU0OWUyZGRjMjQifQ" +
                 ".eyJpc3MiOiJodHRwczovL2RleC5va2RwLmxvY2FsL2RleCIsInN1YiI6IkNnTmliMklTQkd4a1lYQSIsImF1ZCI6ImRleC1vaWRjIiwiZXhwIjoxNzA4NDc2NzE5LCJpYXQiOjE3MDgzOTAzMTksImF0X2hhc2giOiJ4X2tLSHJqR2ZuU2ZrakR3SUdQUGJnIiwiZW1haWwiOiJib2JAZXhhbXBsZS5vcmciLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZ3JvdXBzIjpbInN1cGVyYWRtaW5zIl0sIm5hbWUiOiJib2IifQ" +
@@ -92,7 +93,7 @@ public class OidcAuthProviderTest implements Constants, CommonTest {
             authProvider = HttpSecurityConfig
                     .create(oidcConfig)
                     .authorizeRequests(".*/\\.js", ".*/\\.png")
-                    .tokenStore(CookieTokenStore.of(AUTH_COOKE_NAME, new URL(redirectUri).getHost(), 60))
+                    .tokenStore(CookieTokenStore.of(AUTH_COOKE_NAME, new URL(redirectUri).getHost(), cookieEncryptionKey, 60))
                     .configure();
         }
     }

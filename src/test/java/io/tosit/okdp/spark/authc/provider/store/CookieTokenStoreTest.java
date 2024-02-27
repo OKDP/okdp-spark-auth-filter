@@ -94,7 +94,8 @@ public class CookieTokenStoreTest {
         String cookieName = "spark";
         String cookieDomain = "spark.okdp.local";
         TokenStore tokenStore = CookieTokenStore.of(cookieName,
-                cookieDomain, 60);
+                cookieDomain,
+                "E132A72E815F496FFC49B3EC876754F4", 60);
 
         // When
         Cookie cookie = tokenStore.save(accessToken);
@@ -105,7 +106,7 @@ public class CookieTokenStoreTest {
         assertThat(cookie.getDomain()).isEqualTo(cookieDomain);
         assertThat(cookie.getMaxAge()).isEqualTo(60);
         assertThat(cookie.isHttpOnly()).isEqualTo(true);
-        //assertThat(cookie.getSecure()).isEqualTo(true);
+        assertThat(cookie.getSecure()).isEqualTo(true);
         assertThat(cookie.getPath()).isEqualTo("/;SameSite=Strict;");
         assertThat(persistedToken.refreshToken()).isEqualTo(accessToken.refreshToken());
         assertThat(persistedToken.expiresIn()).isEqualTo(accessToken.expiresIn());

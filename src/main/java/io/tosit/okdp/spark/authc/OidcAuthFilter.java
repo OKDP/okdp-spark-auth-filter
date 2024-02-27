@@ -60,6 +60,8 @@ public class OidcAuthFilter implements Filter, Constants {
                 .orElse(System.getenv("AUTH_REDIRECT_URI")), AUTH_REDIRECT_URI);
         String scope = checkNotNull(ofNullable(filterConfig.getInitParameter(AUTH_SCOPE))
                 .orElse(System.getenv("AUTH_SCOPE")), AUTH_SCOPE);
+        String encryptionKey = checkNotNull(ofNullable(filterConfig.getInitParameter(AUTH_COOKIE_ENCRYPTION_KEY))
+                .orElse(System.getenv("AUTH_COOKIE_ENCRYPTION_KEY")), AUTH_COOKIE_ENCRYPTION_KEY);
         int cookieMaxAgeSeconds = Integer.parseInt(ofNullable(filterConfig.getInitParameter(AUTH_COOKE_MAX_AGE_SECONDS))
                 .orElse(ofNullable(System.getenv("AUTH_COOKE_MAX_AGE_SECONDS"))
                         .orElse(String.valueOf(AUTH_COOKE_DEFAULT_MAX_AGE_SECONDS))));
@@ -88,7 +90,8 @@ public class OidcAuthFilter implements Filter, Constants {
             authProvider = HttpSecurityConfig.create(oidcConfig)
                     .authorizeRequests(".*/.*\\.css", ".*/.*\\.js", ".*/.*\\.png")
                     .tokenStore(CookieTokenStore.of(AUTH_COOKE_NAME,
-                            new URL(oidcConfig.redirectUri()).getHost(), cookieMaxAgeSeconds))
+                            new URL(oidcConfig.redirectUri()).getHost(),
+                            encryptionKey, cookieMaxAgeSeconds))
                     .configure();
         } catch (MalformedURLException e) {
             throw new FilterInitializationException(e.getMessage(), e);
