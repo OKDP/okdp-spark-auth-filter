@@ -36,7 +36,7 @@ import java.util.Date;
 public class PersistedToken {
 
     @JsonProperty("access_token_payload")
-    private AccessTokenPayload accessTokenPayload;
+    private UserInfo userInfo;
 
     @JsonProperty("expires_in")
     private int expiresIn;

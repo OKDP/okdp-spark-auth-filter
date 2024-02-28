@@ -18,8 +18,8 @@ package io.tosit.okdp.spark.authc.provider.store;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.tosit.okdp.spark.authc.model.AccessToken;
-import io.tosit.okdp.spark.authc.model.AccessTokenPayload;
 import io.tosit.okdp.spark.authc.model.PersistedToken;
+import io.tosit.okdp.spark.authc.model.UserInfo;
 import io.tosit.okdp.spark.authc.provider.TokenStore;
 import io.tosit.okdp.spark.authc.utils.TokenUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,7 +52,7 @@ public class CookieTokenStoreTest {
     }
 
     @Test
-    public void should_convert_access_token_response_to_cookie_token() throws IOException {
+    public void should_convert_access_token_into_persisted_token() throws IOException {
         String expected = "{\n" +
                 "  \"access_token_payload\": {\n" +
                 "    \"name\": \"bill\",\n" +
@@ -74,9 +74,9 @@ public class CookieTokenStoreTest {
         int expires_in = 86399;
 
         // When
-        AccessTokenPayload payload = TokenUtils.payload(accessToken);
+        UserInfo userInfo = TokenUtils.userInfo(accessToken);
         PersistedToken persistedToken = PersistedToken.builder()
-                .accessTokenPayload(payload)
+                .userInfo(userInfo)
                 .refreshToken(refreshToken)
                 .expiresIn(expires_in)
                 .expiresAt(Date.from(Instant.parse("2024-02-21T10:11:12.123Z").plusSeconds(expires_in)))
@@ -111,6 +111,6 @@ public class CookieTokenStoreTest {
         assertThat(persistedToken.refreshToken()).isEqualTo(accessToken.refreshToken());
         assertThat(persistedToken.expiresIn()).isEqualTo(accessToken.expiresIn());
         assertThat(persistedToken.expiresAt()).isAfter(Instant.now().plusSeconds(accessToken.expiresIn() - 1));
-        assertThat(persistedToken.accessTokenPayload()).isEqualTo(TokenUtils.payload(accessToken.accessToken()));
+        assertThat(persistedToken.userInfo()).isEqualTo(TokenUtils.userInfo(accessToken.accessToken()));
     }
 }

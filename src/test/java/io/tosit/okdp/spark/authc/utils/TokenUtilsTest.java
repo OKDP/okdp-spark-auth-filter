@@ -15,7 +15,7 @@
  */
 package io.tosit.okdp.spark.authc.utils;
 
-import io.tosit.okdp.spark.authc.model.AccessTokenPayload;
+import io.tosit.okdp.spark.authc.model.UserInfo;
 import org.junit.jupiter.api.Test;
 
 import static java.util.Collections.emptyList;
@@ -32,13 +32,13 @@ public class TokenUtilsTest {
                 ".cyF8yCeTUm5c5xppD0O8gvw0nn2h5S3gdC37U7AfpEKQRaXXZ7KUD8nt9h17MoFKLenAgs5tEPm0aFfgYGIaIkm6S_u35sukVzGQg8sfXlOeuOkn9kYyGh4QUnDGT5y-SfQP6JSLckVqxin3-YtPhsp123rarmob3rPaW0yJrcy6B1kXFxxXMc1bkQNkEwRUfKhhGPPQLoP83BD3NbjyQaB13XAocrH7HcNYlBebLUDEacZIp6V4skqjjfPShg-VlHHOrJ4zW5ChFjak3vcgxg6TKoPkLahAqVpyqW2GzZSquer3jClgMKbAGNNaBYOiIRYkKL5tQNK-lNYuoWD_UQ";
 
         // When
-        AccessTokenPayload payload = TokenUtils.payload(accessToken);
+        UserInfo userInfo = TokenUtils.userInfo(accessToken);
 
         // Then
-        assertThat(payload.name()).isEqualTo("bill");
-        assertThat(payload.email()).isEqualTo("bill@example.org");
-        assertThat(payload.groups()).isEqualTo(singletonList("admins"));
-        assertThat(payload.roles()).isEqualTo(emptyList());
+        assertThat(userInfo.name()).isEqualTo("bill");
+        assertThat(userInfo.email()).isEqualTo("bill@example.org");
+        assertThat(userInfo.groups()).isEqualTo(singletonList("admins"));
+        assertThat(userInfo.roles()).isEqualTo(emptyList());
 
     }
 

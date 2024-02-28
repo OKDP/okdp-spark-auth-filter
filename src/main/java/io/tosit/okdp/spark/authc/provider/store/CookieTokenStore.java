@@ -30,7 +30,7 @@ import static io.tosit.okdp.spark.authc.utils.CompressionUtils.decompress;
 import static io.tosit.okdp.spark.authc.utils.EncryptionUtils.decrypt;
 import static io.tosit.okdp.spark.authc.utils.EncryptionUtils.encryptToString;
 import static io.tosit.okdp.spark.authc.utils.JsonUtils.loadJsonFromString;
-import static io.tosit.okdp.spark.authc.utils.TokenUtils.payload;
+import static io.tosit.okdp.spark.authc.utils.TokenUtils.userInfo;
 import static java.time.Instant.now;
 
 @RequiredArgsConstructor(staticName = "of")
@@ -56,7 +56,7 @@ public class CookieTokenStore implements TokenStore {
     public Cookie save(AccessToken accessToken) {
         // Reduce the token size by saving the token payload part only
         String savedToken = JsonUtils.toJson(PersistedToken.builder()
-                .accessTokenPayload(payload(accessToken.accessToken()))
+                .userInfo(userInfo(accessToken.accessToken()))
                 .refreshToken(accessToken.refreshToken())
                 .expiresIn(accessToken.expiresIn())
                 .expiresAt(Date.from(now().plusSeconds(accessToken.expiresIn())))

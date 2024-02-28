@@ -29,7 +29,7 @@ import static java.util.Collections.emptyList;
 @Data
 @Accessors(fluent = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class AccessTokenPayload {
+public class UserInfo {
 
     @JsonProperty("name")
     private String name;
@@ -48,7 +48,7 @@ public class AccessTokenPayload {
      *
      * @return the list of the groups or roles
      */
-    public List<String> getAllGroups() {
+    public List<String> getGroupsAndRoles() {
         return Stream.concat(groups.stream(), roles.stream())
                 .collect(Collectors.toList());
     }

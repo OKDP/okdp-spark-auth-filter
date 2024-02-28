@@ -32,7 +32,7 @@ import static scala.collection.JavaConverters.asScalaSet;
 /**
  * This class is responsible for getting the groups for a particular authenticated oidc/Oauth2 user.
  * This implementation fetches the list of the groups membership of the user which are already cached during the authentication phase.
- * The groups correspond to the roles or groups claims returned by the OIDC provider.
+ * The groups correspond to the roles and groups claims returned by the OIDC provider.
  */
 @Slf4j
 public class OidcGroupMappingServiceProvider implements GroupMappingServiceProvider {

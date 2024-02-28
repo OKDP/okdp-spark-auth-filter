@@ -16,6 +16,9 @@
 package io.tosit.okdp.spark.authc.utils;
 
 import io.tosit.okdp.spark.authc.config.Constants;
+import io.tosit.okdp.spark.authc.exception.OidcClientException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.servlet.ServletRequest;
@@ -35,5 +38,13 @@ public class HttpAuthenticationUtils implements Constants {
                 .filter(cookie -> cookie.getName().equals(cookieName))
                 .map(Cookie::getValue)
                 .findAny());
+    }
+
+    public static String domain(String url) {
+        try {
+            return new URL(url).getHost();
+        } catch (MalformedURLException e) {
+            throw new OidcClientException(e.getMessage(), e);
+        }
     }
 }

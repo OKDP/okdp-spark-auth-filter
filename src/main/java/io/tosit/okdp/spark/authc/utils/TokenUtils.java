@@ -16,12 +16,12 @@
 package io.tosit.okdp.spark.authc.utils;
 
 import io.tosit.okdp.spark.authc.config.Constants;
-import io.tosit.okdp.spark.authc.model.AccessTokenPayload;
+import io.tosit.okdp.spark.authc.model.UserInfo;
 
 
 public class TokenUtils implements Constants {
-    public static AccessTokenPayload payload(String accessToken) {
+    public static UserInfo userInfo(String accessToken) {
         String[] parts = accessToken.split("\\.");
-        return JsonUtils.loadJsonFromString(new String(BASE64_DECODER.decode(parts[1])), AccessTokenPayload.class);
+        return JsonUtils.loadJsonFromString(new String(BASE64_DECODER.decode(parts[1])), UserInfo.class);
     }
 }

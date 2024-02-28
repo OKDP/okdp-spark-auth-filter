@@ -18,10 +18,9 @@ package io.tosit.okdp.spark.authc;
 import io.tosit.okdp.spark.authc.config.Constants;
 import io.tosit.okdp.spark.authc.config.HttpSecurityConfig;
 import io.tosit.okdp.spark.authc.config.OidcConfig;
-import io.tosit.okdp.spark.authc.exception.FilterInitializationException;
 import io.tosit.okdp.spark.authc.model.AccessToken;
-import io.tosit.okdp.spark.authc.model.AccessTokenPayload;
 import io.tosit.okdp.spark.authc.model.PersistedToken;
+import io.tosit.okdp.spark.authc.model.UserInfo;
 import io.tosit.okdp.spark.authc.model.WellKnownConfiguration;
 import io.tosit.okdp.spark.authc.provider.AuthProvider;
 import io.tosit.okdp.spark.authc.provider.store.CookieTokenStore;
@@ -35,13 +34,12 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Optional;
 
+import static io.tosit.okdp.spark.authc.utils.HttpAuthenticationUtils.domain;
 import static io.tosit.okdp.spark.authc.utils.JsonUtils.loadJsonFromUrl;
 import static io.tosit.okdp.spark.authc.utils.PreconditionsUtils.checkNotNull;
-import static io.tosit.okdp.spark.authc.utils.TokenUtils.payload;
+import static io.tosit.okdp.spark.authc.utils.TokenUtils.userInfo;
 import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
 
@@ -64,9 +62,9 @@ public class OidcAuthFilter implements Filter, Constants {
                 .orElse(System.getenv("AUTH_SCOPE")), AUTH_SCOPE);
         String encryptionKey = checkNotNull(ofNullable(filterConfig.getInitParameter(AUTH_COOKIE_ENCRYPTION_KEY))
                 .orElse(System.getenv("AUTH_COOKIE_ENCRYPTION_KEY")), AUTH_COOKIE_ENCRYPTION_KEY);
-        int cookieMaxAgeSeconds = Integer.parseInt(ofNullable(filterConfig.getInitParameter(AUTH_COOKE_MAX_AGE_SECONDS))
+        int cookieMaxAgeMinutes = Integer.parseInt(ofNullable(filterConfig.getInitParameter(AUTH_COOKE_MAX_AGE_MINUTES))
                 .orElse(ofNullable(System.getenv("AUTH_COOKE_MAX_AGE_SECONDS"))
-                        .orElse(String.valueOf(AUTH_COOKE_DEFAULT_MAX_AGE_SECONDS))));
+                        .orElse(String.valueOf(AUTH_COOKE_DEFAULT_MAX_AGE_MINUTES))));
 
         log.info("Initializing OIDC Auth filter ({}: <{}>,  {}: <{}>) ...", AUTH_ISSUER_URI, issuerUri, AUTH_CLIENT_ID, clientId);
 
@@ -87,17 +85,13 @@ public class OidcAuthFilter implements Filter, Constants {
                 oidcConfig.wellKnownConfiguration().userInfoEndpoint(),
                 oidcConfig.wellKnownConfiguration().scopesSupported());
 
-        try {
-            log.info("Initializing OIDC Auth Provider (access token cookie based storage/cookie name: {}, max-age: {}) ...", AUTH_COOKE_NAME, cookieMaxAgeSeconds);
-            authProvider = HttpSecurityConfig.create(oidcConfig)
-                    .authorizeRequests(".*/.*\\.css", ".*/.*\\.js", ".*/.*\\.png")
-                    .tokenStore(CookieTokenStore.of(AUTH_COOKE_NAME,
-                            new URL(oidcConfig.redirectUri()).getHost(),
-                            encryptionKey, cookieMaxAgeSeconds))
-                    .configure();
-        } catch (MalformedURLException e) {
-            throw new FilterInitializationException(e.getMessage(), e);
-        }
+        log.info("Initializing OIDC Auth Provider (access token cookie based storage/cookie name: {}, max-age (minutes): {}) ...", AUTH_COOKE_NAME, cookieMaxAgeMinutes);
+        authProvider = HttpSecurityConfig.create(oidcConfig)
+                .authorizeRequests(".*/.*\\.css", ".*/.*\\.js", ".*/.*\\.png")
+                .tokenStore(CookieTokenStore.of(AUTH_COOKE_NAME,
+                    domain(oidcConfig.redirectUri()),
+                        encryptionKey, cookieMaxAgeMinutes * 60))
+                .configure();
     }
 
     @Override
@@ -108,44 +102,45 @@ public class OidcAuthFilter implements Filter, Constants {
             return;
         }
 
-        // Extract the access token from the http cookie if present
-        Optional<String> maybeCookie = HttpAuthenticationUtils.getCookieValue(AUTH_COOKE_NAME, servletRequest);
-        if (maybeCookie.isPresent()) {
+        // Extract the access token from the http auth cookie if present
+        Optional<String> maybeAuthCookie = HttpAuthenticationUtils.getCookieValue(AUTH_COOKE_NAME, servletRequest);
+        if (maybeAuthCookie.isPresent()) {
             PersistedToken persistedToken = authProvider.httpSecurityConfig()
                     .tokenStore()
-                    .readToken(maybeCookie.get());
+                    .readToken(maybeAuthCookie.get());
 
             if (persistedToken.isExpired()) {
-                log.info("The user {} token was expired, renewing ... ", persistedToken.accessTokenPayload().email());
+                log.info("The user {} token was expired, renewing ... ", persistedToken.userInfo().email());
                 AccessToken accessToken = Try.of(() -> authProvider.refreshToken(persistedToken.refreshToken()))
                         .onException(e -> ((HttpServletResponse) servletResponse).setStatus(e.getHttpStatusCode()));
                 Cookie cookie = authProvider.httpSecurityConfig().tokenStore().save(accessToken);
                 ((HttpServletResponse) servletResponse).addCookie(cookie);
             }
             // Add the user and groups in the authorization cache
-            OidcGroupMappingServiceProvider.addUserAndGroups(persistedToken.accessTokenPayload().email(),
-                    persistedToken.accessTokenPayload().getAllGroups());
+            OidcGroupMappingServiceProvider.addUserAndGroups(persistedToken.userInfo().email(),
+                    persistedToken.userInfo().getGroupsAndRoles());
             filterChain.doFilter(new PrincipalHttpServletRequestWrapper((HttpServletRequest) servletRequest,
-                    persistedToken.accessTokenPayload().email()), servletResponse);
+                    persistedToken.userInfo().email()), servletResponse);
             return;
 
         }
 
-        if (servletRequest.getParameter("code") == null) {
-            // When the users access spark UI/History for the time, redirect them to the oidc server to authenticate
+        // Get the authorization code if the user is authenticated
+        Optional<String> maybeAuthzCode = ofNullable(servletRequest.getParameter("code"));
+        if (maybeAuthzCode.isEmpty()) {
+            // Redirect the user to the oidc provider to authenticate at the first time access to spark UI/History
             authProvider.redirectUserToAuthorizationEndpoint(servletResponse);
         } else {
-            // The user was authenticated with the oidc server and got the code
-            // From the code, get an access token from the oidc server
-            AccessToken accessToken = Try.of(() -> authProvider.requestAccessToken(servletRequest.getParameter("code")))
+            // The user is authenticated and redirected by the oidc provider into the application with a 'code' query parameter (?code=...)
+            // Exchange the obtained 'code' with an access token by issuing a request against the oidc provider
+            AccessToken accessToken = Try.of(() -> authProvider.requestAccessToken(maybeAuthzCode.get()))
                     .onException(e -> ((HttpServletResponse) servletResponse).setStatus(e.getHttpStatusCode()));
-
-            AccessTokenPayload payload = payload(accessToken.accessToken());
-            log.info("Successfully authenticated user: {} (roles: {}, groups: {})", payload.email(), payload.roles(), payload.groups());
+            UserInfo userInfo = userInfo(accessToken.accessToken());
+            log.info("Successfully authenticated user: {} (roles: {}, groups: {})", userInfo.email(), userInfo.roles(), userInfo.groups());
             Cookie cookie = authProvider.httpSecurityConfig().tokenStore().save(accessToken);
             ((HttpServletResponse) servletResponse).addCookie(cookie);
-            // Add the user and groups in the authorization cache
-            OidcGroupMappingServiceProvider.addUserAndGroups(payload.email(), payload.getAllGroups());
+            // Add the user and the corresponding groups/roles in the authorization cache
+            OidcGroupMappingServiceProvider.addUserAndGroups(userInfo.email(), userInfo.getGroupsAndRoles());
             // Redirect the user from the browser (client) side (the authz 'code' becomes invalid)
             servletResponse.getWriter().print("<script type=\"text/javascript\">window.location.href = '/home'</script>");
         }

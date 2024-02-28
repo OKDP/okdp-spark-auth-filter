@@ -28,8 +28,8 @@ public interface Constants {
     int OIDC_REQUEST_TIMEOUT_SECONDS = 30;
 
     String AUTH_COOKE_NAME = "okdp-spark-cookie";
-    String AUTH_COOKE_MAX_AGE_SECONDS = "cookie-max-age-seconds";
-    int AUTH_COOKE_DEFAULT_MAX_AGE_SECONDS = 12 * 60 * 60;
+    String AUTH_COOKE_MAX_AGE_MINUTES = "cookie-max-age-minutes";
+    int AUTH_COOKE_DEFAULT_MAX_AGE_MINUTES = 12 * 60;
 
     /* Cookie encryption properties for token cookie store */
 
