@@ -13,19 +13,19 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
 package io.tosit.okdp.spark.authc.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.time.Instant;
+import java.util.Date;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
-
-import java.time.Instant;
-import java.util.Date;
 
 @Builder
 @Data
@@ -35,21 +35,20 @@ import java.util.Date;
 @NoArgsConstructor
 public class PersistedToken {
 
-    @JsonProperty("access_token_payload")
-    private UserInfo userInfo;
+  @JsonProperty("access_token_payload")
+  private UserInfo userInfo;
 
-    @JsonProperty("expires_in")
-    private int expiresIn;
+  @JsonProperty("expires_in")
+  private int expiresIn;
 
-    @JsonProperty("expires_at")
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-    private Date expiresAt;
+  @JsonProperty("expires_at")
+  @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+  private Date expiresAt;
 
-    @JsonProperty("refresh_token")
-    private String refreshToken;
+  @JsonProperty("refresh_token")
+  private String refreshToken;
 
-
-    public boolean isExpired() {
-        return Instant.now().isAfter(expiresAt.toInstant());
-    }
+  public boolean isExpired() {
+    return Instant.now().isAfter(expiresAt.toInstant());
+  }
 }

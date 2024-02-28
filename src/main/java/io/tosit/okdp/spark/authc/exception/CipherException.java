@@ -13,10 +13,11 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
 package io.tosit.okdp.spark.authc.exception;
 
 public class CipherException extends RuntimeException {
-    public CipherException(String message, Throwable cause) {
-        super(message, cause);
-    }
+  public CipherException(String message, Throwable cause) {
+    super(message, cause);
+  }
 }

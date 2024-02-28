@@ -13,11 +13,12 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
 package io.tosit.okdp.spark.authc.exception;
 
 public class OidcClientException extends RuntimeException {
 
-    public OidcClientException(String message, Throwable cause) {
-        super(message, cause);
-    }
+  public OidcClientException(String message, Throwable cause) {
+    super(message, cause);
+  }
 }

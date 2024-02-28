@@ -13,28 +13,28 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
 package io.tosit.okdp.spark.authc.utils.exception;
 
 import io.tosit.okdp.spark.authc.exception.AuthenticationException;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RequiredArgsConstructor(staticName = "of")
 public class Try<T> {
 
-    @NonNull
-    private Supplier<T> supplier;
+  @NonNull private Supplier<T> supplier;
 
-    public T onException(Consumer<AuthenticationException> onException) {
-        try {
-            return supplier.get();
-        } catch (AuthenticationException e) {
-            onException.accept(e);
-            throw e;
-        }
+  public T onException(Consumer<AuthenticationException> onException) {
+    try {
+      return supplier.get();
+    } catch (AuthenticationException e) {
+      onException.accept(e);
+      throw e;
     }
-
+  }
 }

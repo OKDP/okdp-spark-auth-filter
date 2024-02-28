@@ -13,38 +13,40 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
 package io.tosit.okdp.spark.authc.utils;
+
+import static java.util.Optional.ofNullable;
 
 import io.tosit.okdp.spark.authc.config.Constants;
 import io.tosit.okdp.spark.authc.exception.OidcClientException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import lombok.extern.slf4j.Slf4j;
-
+import java.util.Arrays;
+import java.util.Optional;
 import javax.servlet.ServletRequest;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
-import java.util.Arrays;
-import java.util.Optional;
-
-import static java.util.Optional.ofNullable;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class HttpAuthenticationUtils implements Constants {
 
-    public static Optional<String> getCookieValue(String cookieName, ServletRequest request) {
-        Optional<Cookie[]> maybeCookie = ofNullable(((HttpServletRequest) request).getCookies());
-        return maybeCookie.flatMap(cookies -> Arrays.stream(cookies)
+  public static Optional<String> getCookieValue(String cookieName, ServletRequest request) {
+    Optional<Cookie[]> maybeCookie = ofNullable(((HttpServletRequest) request).getCookies());
+    return maybeCookie.flatMap(
+        cookies ->
+            Arrays.stream(cookies)
                 .filter(cookie -> cookie.getName().equals(cookieName))
                 .map(Cookie::getValue)
                 .findAny());
-    }
+  }
 
-    public static String domain(String url) {
-        try {
-            return new URL(url).getHost();
-        } catch (MalformedURLException e) {
-            throw new OidcClientException(e.getMessage(), e);
-        }
+  public static String domain(String url) {
+    try {
+      return new URL(url).getHost();
+    } catch (MalformedURLException e) {
+      throw new OidcClientException(e.getMessage(), e);
     }
+  }
 }

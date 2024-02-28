@@ -13,26 +13,28 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.tosit.okdp.spark.authc.utils;
 
-import com.google.common.base.Strings;
+package io.tosit.okdp.spark.authc.utils;
 
 import static java.lang.String.format;
 
+import com.google.common.base.Strings;
+
 public class PreconditionsUtils {
 
-    /**
-     * Ensures
-     *
-     * @param str
-     * @param label
-     * @return
-     */
-    public static String checkNotNull(String str, String label) {
-        if (Strings.nullToEmpty(str).trim().isEmpty()) {
-            throw new NullPointerException(format("The parameter <%s> should not be null or blank", label));
-        } else {
-            return str;
-        }
+  /**
+   * Ensures
+   *
+   * @param str
+   * @param label
+   * @return
+   */
+  public static String checkNotNull(String str, String label) {
+    if (Strings.nullToEmpty(str).trim().isEmpty()) {
+      throw new NullPointerException(
+          format("The parameter <%s> should not be null or blank", label));
+    } else {
+      return str;
     }
+  }
 }

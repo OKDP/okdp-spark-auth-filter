@@ -13,35 +13,33 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.tosit.okdp.spark.authc;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
-import java.security.Principal;
+package io.tosit.okdp.spark.authc;
 
 import static java.util.Optional.ofNullable;
 
-/**
- * Flow the authenticated user to downstream spark UI/History filter chain
- */
+import java.security.Principal;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
+
+/** Flow the authenticated user to downstream spark UI/History filter chain */
 public class PrincipalHttpServletRequestWrapper extends HttpServletRequestWrapper {
-    private final String authenticatedUser;
-    private final HttpServletRequest request;
+  private final String authenticatedUser;
+  private final HttpServletRequest request;
 
-    public PrincipalHttpServletRequestWrapper(HttpServletRequest request, String authenticatedUser) {
-        super(request);
-        this.authenticatedUser = authenticatedUser;
-        this.request = request;
-    }
+  public PrincipalHttpServletRequestWrapper(HttpServletRequest request, String authenticatedUser) {
+    super(request);
+    this.authenticatedUser = authenticatedUser;
+    this.request = request;
+  }
 
-    @Override
-    public Principal getUserPrincipal() {
-        return ofNullable(request.getUserPrincipal()).orElse(() -> authenticatedUser);
-    }
+  @Override
+  public Principal getUserPrincipal() {
+    return ofNullable(request.getUserPrincipal()).orElse(() -> authenticatedUser);
+  }
 
-    @Override
-    public String getRemoteUser() {
-        return ofNullable(request.getRemoteUser()).orElse(this.authenticatedUser);
-    }
-
+  @Override
+  public String getRemoteUser() {
+    return ofNullable(request.getRemoteUser()).orElse(this.authenticatedUser);
+  }
 }

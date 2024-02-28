@@ -13,6 +13,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
 package io.tosit.okdp.spark.authc.config;
 
 import io.tosit.okdp.spark.authc.model.WellKnownConfiguration;
@@ -24,11 +25,11 @@ import lombok.experimental.Accessors;
 @Getter
 @Accessors(fluent = true)
 public class OidcConfig {
-    private String issuerUri;
-    private String clientId;
-    private String clientSecret;
-    private String redirectUri;
-    private String responseType;
-    private String scope;
-    private WellKnownConfiguration wellKnownConfiguration;
+  private String issuerUri;
+  private String clientId;
+  private String clientSecret;
+  private String redirectUri;
+  private String responseType;
+  private String scope;
+  private WellKnownConfiguration wellKnownConfiguration;
 }

@@ -13,55 +13,59 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.tosit.okdp.spark.authc.utils;
 
-import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
-import org.junit.jupiter.api.Test;
+package io.tosit.okdp.spark.authc.utils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.ThrowableAssert.catchThrowable;
 
+import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
+import org.junit.jupiter.api.Test;
+
 public class PreconditionsUtilsTest {
 
-    @Test
-    public void should_throw_an_exception_on_null_value() {
-        // when
-        Throwable emptyValue = catchThrowable(() -> {
-            PreconditionsUtils.checkNotNull("", "label_01");
-        });
+  @Test
+  public void should_throw_an_exception_on_null_value() {
+    // when
+    Throwable emptyValue =
+        catchThrowable(
+            () -> {
+              PreconditionsUtils.checkNotNull("", "label_01");
+            });
 
-        Throwable nullValue = catchThrowable(() -> {
-            PreconditionsUtils.checkNotNull(null, "label_01");
-        });
+    Throwable nullValue =
+        catchThrowable(
+            () -> {
+              PreconditionsUtils.checkNotNull(null, "label_01");
+            });
 
-        Throwable spacesValue = catchThrowable(() -> {
-            PreconditionsUtils.checkNotNull("    ", "label_01");
-        });
+    Throwable spacesValue =
+        catchThrowable(
+            () -> {
+              PreconditionsUtils.checkNotNull("    ", "label_01");
+            });
 
-        // Then
-        assertThat(emptyValue)
-                .isInstanceOf(NullPointerException.class)
-                .hasMessageContaining("label_01");
+    // Then
+    assertThat(emptyValue)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessageContaining("label_01");
 
-        assertThat(nullValue)
-                .isInstanceOf(NullPointerException.class)
-                .hasMessageContaining("label_01");
+    assertThat(nullValue).isInstanceOf(NullPointerException.class).hasMessageContaining("label_01");
 
-        assertThat(spacesValue)
-                .isInstanceOf(NullPointerException.class)
-                .hasMessageContaining("label_01");
+    assertThat(spacesValue)
+        .isInstanceOf(NullPointerException.class)
+        .hasMessageContaining("label_01");
+  }
 
-    }
+  @Test
+  public void should_not_throw_any_exception() {
 
-    @Test
-    public void should_not_throw_any_exception() {
+    // when
+    ThrowingCallable validValue =
+        () -> PreconditionsUtils.checkNotNull("label_01_value", "label_01");
 
-        // when
-        ThrowingCallable validValue = () -> PreconditionsUtils.checkNotNull("label_01_value", "label_01");
-
-        // Then
-        assertThatCode(validValue).doesNotThrowAnyException();
-
-    }
+    // Then
+    assertThatCode(validValue).doesNotThrowAnyException();
+  }
 }

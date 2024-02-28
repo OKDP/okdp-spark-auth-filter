@@ -13,30 +13,27 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
 package io.tosit.okdp.spark.authc.utils;
-
-import org.junit.jupiter.api.Test;
-
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.junit.jupiter.api.Test;
+
 public class EncryptionUtilsTest {
 
-    @Test
-    public void should_encrypt_and_decrypt_text() throws NoSuchAlgorithmException, InvalidKeySpecException {
-        // Given
-        String text = "message to encrypt";
-        // Generated using: openssl enc -aes-128-cbc -k MyPassPhrapse -P -md sha1 -pbkdf2
-        String secretKey = "E132A72E815F496FFC49B3EC876754F4";
+  @Test
+  public void should_encrypt_and_decrypt_text() {
+    // Given
+    String text = "message to encrypt";
+    // Generated using: openssl enc -aes-128-cbc -k MyPassPhrapse -P -md sha1 -pbkdf2
+    String secretKey = "E132A72E815F496FFC49B3EC876754F4";
 
-        // When
-        String encrypted = EncryptionUtils.encryptToString(text, secretKey);
-        String decrypted = EncryptionUtils.decrypt(encrypted, secretKey);
+    // When
+    String encrypted = EncryptionUtils.encryptToString(text, secretKey);
+    String decrypted = EncryptionUtils.decrypt(encrypted, secretKey);
 
-        // Then
-        assertThat(text).isEqualTo(decrypted);
-    }
-
+    // Then
+    assertThat(text).isEqualTo(decrypted);
+  }
 }

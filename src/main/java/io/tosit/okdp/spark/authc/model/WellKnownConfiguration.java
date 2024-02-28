@@ -13,30 +13,29 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
 package io.tosit.okdp.spark.authc.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 import lombok.Data;
 import lombok.experimental.Accessors;
-
-import java.util.List;
 
 @Data
 @Accessors(fluent = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class WellKnownConfiguration {
 
-    @JsonProperty("authorization_endpoint")
-    private String authorizationEndpoint;
+  @JsonProperty("authorization_endpoint")
+  private String authorizationEndpoint;
 
-    @JsonProperty("token_endpoint")
-    private String tokenEndpoint;
+  @JsonProperty("token_endpoint")
+  private String tokenEndpoint;
 
-    @JsonProperty("userinfo_endpoint")
-    private String userInfoEndpoint;
+  @JsonProperty("userinfo_endpoint")
+  private String userInfoEndpoint;
 
-    @JsonProperty("scopes_supported")
-    private List<String> scopesSupported;
-
+  @JsonProperty("scopes_supported")
+  private List<String> scopesSupported;
 }

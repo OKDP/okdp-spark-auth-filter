@@ -13,25 +13,26 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
 package io.tosit.okdp.spark.authc.provider;
 
 import io.tosit.okdp.spark.authc.model.AccessToken;
 
 public interface TokenStore {
 
-    /**
-     * Save the access token in a {@link T}
-     *
-     * @param accessToken the access token response from the oidc server
-     * @return {@link T} containing the saved access token
-     */
-    <T> T save(AccessToken accessToken);
+  /**
+   * Save the access token in a {@link T}
+   *
+   * @param accessToken the access token response from the oidc server
+   * @return {@link T} containing the saved access token
+   */
+  <T> T save(AccessToken accessToken);
 
-    /**
-     * Read the access token in a {@link T}
-     *
-     * @param value the access token string value saved by the TokenStore provider
-     * @return {@link T} containing the resulting access token
-     */
-    <T> T readToken(String value);
+  /**
+   * Read the access token in a {@link T}
+   *
+   * @param value the access token string value saved by the TokenStore provider
+   * @return {@link T} containing the resulting access token
+   */
+  <T> T readToken(String value);
 }

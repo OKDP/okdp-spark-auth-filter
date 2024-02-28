@@ -13,40 +13,43 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
 package io.tosit.okdp.spark.authc.utils;
-
-import io.tosit.okdp.spark.authc.exception.AuthenticationException;
-import io.tosit.okdp.spark.authc.utils.exception.Try;
-import org.junit.jupiter.api.Test;
-
-import javax.servlet.http.HttpServletResponse;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.ThrowableAssert.catchThrowable;
 import static org.mockito.Mockito.mock;
 
+import io.tosit.okdp.spark.authc.exception.AuthenticationException;
+import io.tosit.okdp.spark.authc.utils.exception.Try;
+import javax.servlet.http.HttpServletResponse;
+import org.junit.jupiter.api.Test;
+
 public class TryTest {
 
-    @Test
-    public void should_rethrow_original_exception() {
-        // Given
-        HttpServletResponse response = mock(HttpServletResponse.class);
+  @Test
+  public void should_rethrow_original_exception() {
+    // Given
+    HttpServletResponse response = mock(HttpServletResponse.class);
 
-        // when
-        String validCall = Try.of(() -> "OK").onException(e -> response.setStatus(e.getHttpStatusCode()));
+    // when
+    String validCall =
+        Try.of(() -> "OK").onException(e -> response.setStatus(e.getHttpStatusCode()));
 
-        Throwable nonValidCall = catchThrowable(() -> Try.of(() -> {
-                    throw new AuthenticationException(400, "Bad Request");
-                })
-                .onException(e -> response.setStatus(e.getHttpStatusCode())));
+    Throwable nonValidCall =
+        catchThrowable(
+            () ->
+                Try.of(
+                        () -> {
+                          throw new AuthenticationException(400, "Bad Request");
+                        })
+                    .onException(e -> response.setStatus(e.getHttpStatusCode())));
 
-        // Then
-        assertThat(validCall).isEqualTo("OK");
-        assertThat(nonValidCall)
-                .isInstanceOf(AuthenticationException.class)
-                .hasMessageContaining("Bad Request");
-        assertThat(((AuthenticationException) nonValidCall).getHttpStatusCode()).isEqualTo(400);
-    }
-
-
+    // Then
+    assertThat(validCall).isEqualTo("OK");
+    assertThat(nonValidCall)
+        .isInstanceOf(AuthenticationException.class)
+        .hasMessageContaining("Bad Request");
+    assertThat(((AuthenticationException) nonValidCall).getHttpStatusCode()).isEqualTo(400);
+  }
 }

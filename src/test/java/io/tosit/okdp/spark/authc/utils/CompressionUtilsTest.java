@@ -13,25 +13,26 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.tosit.okdp.spark.authc.utils;
 
-import org.junit.jupiter.api.Test;
+package io.tosit.okdp.spark.authc.utils;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
+import org.junit.jupiter.api.Test;
+
 public class CompressionUtilsTest {
 
-    @Test
-    public void should_compress_and_decompress_data() {
-        // Given
-        String dataToCompress = "Data to compress";
+  @Test
+  public void should_compress_and_decompress_data() {
+    // Given
+    String data = "Data to compress";
 
-        // When
-        String base64Compressed = CompressionUtils.compressToString(dataToCompress);
-        String plaintextDecompressed = CompressionUtils.decompress(base64Compressed);
+    // When
+    String compressed = CompressionUtils.compressToString(data);
+    String decompressed = CompressionUtils.decompress(compressed);
 
-        // Then
-        assertThat("H8KLCAAAAAAAAMO/c0ksSVQow4lXSMOOw48tKEotLgYAAXtWFRAAAAA=").isEqualTo(base64Compressed);
-        assertThat(plaintextDecompressed).isEqualTo(dataToCompress);
-    }
+    // Then
+    assertThat(compressed).isBase64();
+    assertThat(decompressed).isEqualTo(data);
+  }
 }

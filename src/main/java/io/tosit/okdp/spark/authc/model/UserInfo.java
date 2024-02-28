@@ -13,44 +13,42 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
 package io.tosit.okdp.spark.authc.model;
+
+import static java.util.Collections.emptyList;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Data;
-import lombok.experimental.Accessors;
-
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static java.util.Collections.emptyList;
+import lombok.Data;
+import lombok.experimental.Accessors;
 
 @Data
 @Accessors(fluent = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class UserInfo {
 
-    @JsonProperty("name")
-    private String name;
+  @JsonProperty("name")
+  private String name;
 
-    @JsonProperty("email")
-    private String email;
+  @JsonProperty("email")
+  private String email;
 
-    @JsonProperty("groups")
-    private List<String> groups = emptyList();
+  @JsonProperty("groups")
+  private List<String> groups = emptyList();
 
-    @JsonProperty("roles")
-    private List<String> roles = emptyList();
+  @JsonProperty("roles")
+  private List<String> roles = emptyList();
 
-    /**
-     * Return groups or roles depending on the OIDC server (Ex.: dex -> groups, some others: roles)
-     *
-     * @return the list of the groups or roles
-     */
-    public List<String> getGroupsAndRoles() {
-        return Stream.concat(groups.stream(), roles.stream())
-                .collect(Collectors.toList());
-    }
-
+  /**
+   * Return groups or roles depending on the OIDC server (Ex.: dex -> groups, some others: roles)
+   *
+   * @return the list of the groups or roles
+   */
+  public List<String> getGroupsAndRoles() {
+    return Stream.concat(groups.stream(), roles.stream()).collect(Collectors.toList());
+  }
 }

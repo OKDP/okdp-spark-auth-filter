@@ -13,54 +13,56 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
 package io.tosit.okdp.spark.authc.provider;
 
 import io.tosit.okdp.spark.authc.config.HttpSecurityConfig;
 import io.tosit.okdp.spark.authc.exception.AuthenticationException;
 import io.tosit.okdp.spark.authc.model.AccessToken;
-
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 
 public interface AuthProvider {
-    /**
-     * Redirect the user to the OIDC server in order to get an authorization code
-     *
-     * @param servletResponse the {@link ServletResponse}
-     * @throws AuthenticationException
-     */
-    void redirectUserToAuthorizationEndpoint(ServletResponse servletResponse) throws AuthenticationException;
+  /**
+   * Redirect the user to the OIDC server in order to get an authorization code
+   *
+   * @param servletResponse the {@link ServletResponse}
+   * @throws AuthenticationException
+   */
+  void redirectUserToAuthorizationEndpoint(ServletResponse servletResponse)
+      throws AuthenticationException;
 
-    /**
-     * Retrieve an access token for the authenticated user using his authorization code
-     *
-     * @param code the authorization code obtained on the first time user login
-     * @return the access token ({@link AccessToken}) from the OIDC server
-     * @throws AuthenticationException
-     */
-    AccessToken requestAccessToken(String code) throws AuthenticationException;
+  /**
+   * Retrieve an access token for the authenticated user using his authorization code
+   *
+   * @param code the authorization code obtained on the first time user login
+   * @return the access token ({@link AccessToken}) from the OIDC server
+   * @throws AuthenticationException
+   */
+  AccessToken requestAccessToken(String code) throws AuthenticationException;
 
-    /**
-     * Retrieve an access token for the authenticated user using his refresh token
-     *
-     * @param refreshToken the refresh token obtained by the user on the first successful authentication
-     * @return the access token ({@link AccessToken}) from the OIDC server
-     * @throws AuthenticationException
-     */
-    AccessToken refreshToken(String refreshToken) throws AuthenticationException;
+  /**
+   * Retrieve an access token for the authenticated user using his refresh token
+   *
+   * @param refreshToken the refresh token obtained by the user on the first successful
+   *     authentication
+   * @return the access token ({@link AccessToken}) from the OIDC server
+   * @throws AuthenticationException
+   */
+  AccessToken refreshToken(String refreshToken) throws AuthenticationException;
 
-    /**
-     * Check if the request URI is authorized without authentication
-     *
-     * @param servletRequest the {@link ServletRequest}
-     * @return true if authorised, false otherwise
-     */
-    boolean isAuthorized(ServletRequest servletRequest);
+  /**
+   * Check if the request URI is authorized without authentication
+   *
+   * @param servletRequest the {@link ServletRequest}
+   * @return true if authorised, false otherwise
+   */
+  boolean isAuthorized(ServletRequest servletRequest);
 
-    /**
-     * Return the oidc provider http security configuration
-     *
-     * @return {@link HttpSecurityConfig}
-     */
-    HttpSecurityConfig httpSecurityConfig();
+  /**
+   * Return the oidc provider http security configuration
+   *
+   * @return {@link HttpSecurityConfig}
+   */
+  HttpSecurityConfig httpSecurityConfig();
 }

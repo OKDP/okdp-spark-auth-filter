@@ -13,41 +13,41 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
 package io.tosit.okdp.spark.authc.utils;
+
+import static java.lang.String.format;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.tosit.okdp.spark.authc.exception.OidcClientException;
-
 import java.io.IOException;
 import java.net.URL;
 
-import static java.lang.String.format;
-
 public class JsonUtils {
-    private static final ObjectMapper mapper = new ObjectMapper();
+  private static final ObjectMapper mapper = new ObjectMapper();
 
-    public static <T> T loadJsonFromUrl(String url, Class<T> type) throws RuntimeException {
-        try {
-            return mapper.readValue(new URL(url), type);
-        } catch (IOException e) {
-            throw new OidcClientException(format("Unable te fetch json data from Url: %s", url), e);
-        }
+  public static <T> T loadJsonFromUrl(String url, Class<T> type) throws RuntimeException {
+    try {
+      return mapper.readValue(new URL(url), type);
+    } catch (IOException e) {
+      throw new OidcClientException(format("Unable te fetch json data from Url: %s", url), e);
     }
+  }
 
-    public static <T> T loadJsonFromString(String json, Class<T> type) throws RuntimeException {
-        try {
-            return mapper.readValue(json, type);
-        } catch (JsonProcessingException e) {
-            throw new OidcClientException(format("Unable to load json data into the class %s", type), e);
-        }
+  public static <T> T loadJsonFromString(String json, Class<T> type) throws RuntimeException {
+    try {
+      return mapper.readValue(json, type);
+    } catch (JsonProcessingException e) {
+      throw new OidcClientException(format("Unable to load json data into the class %s", type), e);
     }
+  }
 
-    public static <T> String toJson(T type) throws RuntimeException {
-        try {
-            return mapper.writeValueAsString(type);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+  public static <T> String toJson(T type) throws RuntimeException {
+    try {
+      return mapper.writeValueAsString(type);
+    } catch (JsonProcessingException e) {
+      throw new OidcClientException(e.getMessage(), e);
     }
+  }
 }

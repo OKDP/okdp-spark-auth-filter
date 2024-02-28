@@ -13,6 +13,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
 package io.tosit.okdp.spark.authc.exception;
 
 import lombok.Getter;
@@ -20,14 +21,14 @@ import org.apache.hc.core5.http.HttpStatus;
 
 @Getter
 public class AuthenticationException extends RuntimeException {
-    private int httpStatusCode = HttpStatus.SC_SERVER_ERROR;
+  private int httpStatusCode = HttpStatus.SC_SERVER_ERROR;
 
-    public AuthenticationException(String message, Throwable cause) {
-        super(message, cause);
-    }
+  public AuthenticationException(String message, Throwable cause) {
+    super(message, cause);
+  }
 
-    public AuthenticationException(int httpStatusCode, String message) {
-        super(message);
-        this.httpStatusCode = httpStatusCode;
-    }
+  public AuthenticationException(int httpStatusCode, String message) {
+    super(message);
+    this.httpStatusCode = httpStatusCode;
+  }
 }

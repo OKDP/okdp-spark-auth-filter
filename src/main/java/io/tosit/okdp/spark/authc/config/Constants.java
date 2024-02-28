@@ -13,31 +13,32 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
 package io.tosit.okdp.spark.authc.config;
 
 import java.util.Base64;
 
 public interface Constants {
-    /* OIDC parameters */
-    String AUTH_ISSUER_URI = "issuer-uri";
-    String AUTH_CLIENT_ID = "client-id";
-    String AUTH_CLIENT_SECRET = "client-secret";
-    String AUTH_REDIRECT_URI = "redirect-uri";
-    String AUTH_SCOPE = "scope";
-    String AUTH_ISSUER_WELL_KNOWN_CONFIGURATION = "/.well-known/openid-configuration";
-    int OIDC_REQUEST_TIMEOUT_SECONDS = 30;
+  /* OIDC parameters */
+  String AUTH_ISSUER_URI = "issuer-uri";
+  String AUTH_CLIENT_ID = "client-id";
+  String AUTH_CLIENT_SECRET = "client-secret";
+  String AUTH_REDIRECT_URI = "redirect-uri";
+  String AUTH_SCOPE = "scope";
+  String AUTH_ISSUER_WELL_KNOWN_CONFIGURATION = "/.well-known/openid-configuration";
+  int OIDC_REQUEST_TIMEOUT_SECONDS = 30;
 
-    String AUTH_COOKE_NAME = "okdp-spark-cookie";
-    String AUTH_COOKE_MAX_AGE_MINUTES = "cookie-max-age-minutes";
-    int AUTH_COOKE_DEFAULT_MAX_AGE_MINUTES = 12 * 60;
+  String AUTH_COOKE_NAME = "okdp-spark-cookie";
+  String AUTH_COOKE_MAX_AGE_MINUTES = "cookie-max-age-minutes";
+  int AUTH_COOKE_DEFAULT_MAX_AGE_MINUTES = 12 * 60;
 
-    /* Cookie encryption properties for token cookie store */
+  /* Cookie encryption properties for token cookie store */
 
-    String AUTH_COOKIE_ENCRYPTION_KEY = "cookie-cipher-secret-key";
-    String CIPHER_TRANSFORMATION = "AES/GCM/NoPadding";
-    String AES_ENCRYPTION_ALGORITHEM = "AES";
+  String AUTH_COOKIE_ENCRYPTION_KEY = "cookie-cipher-secret-key";
+  String CIPHER_TRANSFORMATION = "AES/GCM/NoPadding";
+  String AES_ENCRYPTION_ALGORITHEM = "AES";
 
-    /* Encoders */
-    Base64.Encoder BASE64_ENCODER = Base64.getEncoder();
-    Base64.Decoder BASE64_DECODER = Base64.getDecoder();
+  /* Encoders */
+  Base64.Encoder BASE64_ENCODER = Base64.getEncoder();
+  Base64.Decoder BASE64_DECODER = Base64.getDecoder();
 }
