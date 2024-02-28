@@ -21,6 +21,7 @@ import io.tosit.okdp.spark.authc.model.PersistedToken;
 import io.tosit.okdp.spark.authc.model.WellKnownConfiguration;
 import io.tosit.okdp.spark.authc.provider.OidcAuthProvider;
 import io.tosit.okdp.spark.authc.utils.JsonUtils;
+import io.tosit.okdp.spark.authz.OidcGroupMappingServiceProvider;
 import org.apache.hc.client5.http.fluent.Request;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,11 +41,15 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
+import java.util.HashSet;
+import java.util.List;
 
+import static java.lang.String.format;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.*;
+import static scala.collection.JavaConverters.asScalaSet;
 
 @Suite
 @SuiteDisplayName("Autc/Autz code flow test Suite")
@@ -77,7 +82,7 @@ public class OidcAuthFilterTest implements Constants, CommonTest {
         WellKnownConfiguration wlc = JsonUtils.loadJsonFromString(TEST_DEX_WELL_KNOWN_CONFIGURATION, WellKnownConfiguration.class);
         FilterConfig filterConfig = mock(FilterConfig.class);
         try (MockedStatic<JsonUtils> jsonUtils = mockStatic(JsonUtils.class)) {
-            jsonUtils.when(() -> JsonUtils.loadJsonFromUrl(String.format("%s%s", issuerUri, AUTH_ISSUER_WELL_KNOWN_CONFIGURATION),
+            jsonUtils.when(() -> JsonUtils.loadJsonFromUrl(format("%s%s", issuerUri, AUTH_ISSUER_WELL_KNOWN_CONFIGURATION),
                             WellKnownConfiguration.class))
                     .thenReturn(wlc);
             when(filterConfig.getInitParameter(AUTH_ISSUER_URI)).thenReturn(issuerUri);
@@ -126,7 +131,7 @@ public class OidcAuthFilterTest implements Constants, CommonTest {
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
         verify(chain, never()).doFilter(request, response);
         verify(response).sendRedirect(captor.capture());
-        assertEquals(String.format("https://dex.okdp.local/dex/auth?client_id=%s" +
+        assertEquals(format("https://dex.okdp.local/dex/auth?client_id=%s" +
                         "&redirect_uri=%s" +
                         "&response_type=code&scope=openid+profile+email+groups+offline_access", clientId, redirectUri),
                 captor.getValue());
@@ -158,6 +163,37 @@ public class OidcAuthFilterTest implements Constants, CommonTest {
 
         // Then
         assertThat(out.toString()).isEqualTo("<script type=\"text/javascript\">window.location.href = '/home'</script>");
+
+    }
+
+    @Test
+    void should_run_authentication_flow_authz__map_membership_groups_for_user() throws IOException, ServletException {
+        // Given
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        FilterChain chain = mock(FilterChain.class);
+        when(request.getRequestURI()).thenReturn("/home");
+        StringWriter out = new StringWriter();
+        when(response.getWriter()).thenReturn(new PrintWriter(out));
+        // Set the authZ code request parameter
+        when(request.getParameter(any(String.class))).thenReturn("kpxblxm2si3x6ofxufgo54h4j");
+        // Return the access token from code
+        doReturn(accessTokenResponse).when(oidcAuthProvider).doExecute(any(Request.class));
+        // Authorization provider
+        OidcGroupMappingServiceProvider groupMappingServiceProvider = new OidcGroupMappingServiceProvider();
+
+        // When
+        oidcAuthFilter.doFilter(request, response, chain);
+
+        // Then
+        ArgumentCaptor<Cookie> captor = ArgumentCaptor.forClass(Cookie.class);
+        verify(response).addCookie(captor.capture());
+        PersistedToken persistedToken = oidcAuthProvider.httpSecurityConfig().tokenStore().readToken(captor.getValue().getValue());
+        assertNotNull(persistedToken);
+
+        // Then
+        assertThat(groupMappingServiceProvider.getGroups("bob@example.org"))
+                .isEqualTo(asScalaSet(new HashSet<>(List.of("superadmins"))).toSet());
 
     }
 

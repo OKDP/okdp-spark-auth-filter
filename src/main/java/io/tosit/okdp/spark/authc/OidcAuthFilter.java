@@ -27,10 +27,12 @@ import io.tosit.okdp.spark.authc.provider.AuthProvider;
 import io.tosit.okdp.spark.authc.provider.store.CookieTokenStore;
 import io.tosit.okdp.spark.authc.utils.HttpAuthenticationUtils;
 import io.tosit.okdp.spark.authc.utils.exception.Try;
+import io.tosit.okdp.spark.authz.OidcGroupMappingServiceProvider;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.servlet.*;
 import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -100,7 +102,7 @@ public class OidcAuthFilter implements Filter, Constants {
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
-        // Don't require authentication and authorization (ACLs) on static content (.js, .css, .png, etc)
+        // Skip authentication for static content (.js, .css, .png, etc)
         if (authProvider.isAuthorized(servletRequest)) {
             filterChain.doFilter(servletRequest, servletResponse);
             return;
@@ -120,7 +122,11 @@ public class OidcAuthFilter implements Filter, Constants {
                 Cookie cookie = authProvider.httpSecurityConfig().tokenStore().save(accessToken);
                 ((HttpServletResponse) servletResponse).addCookie(cookie);
             }
-            filterChain.doFilter(servletRequest, servletResponse);
+            // Add the user and groups in the authorization cache
+            OidcGroupMappingServiceProvider.addUserAndGroups(persistedToken.accessTokenPayload().email(),
+                    persistedToken.accessTokenPayload().getAllGroups());
+            filterChain.doFilter(new PrincipalHttpServletRequestWrapper((HttpServletRequest) servletRequest,
+                    persistedToken.accessTokenPayload().email()), servletResponse);
             return;
 
         }
@@ -138,6 +144,8 @@ public class OidcAuthFilter implements Filter, Constants {
             log.info("Successfully authenticated user: {} (roles: {}, groups: {})", payload.email(), payload.roles(), payload.groups());
             Cookie cookie = authProvider.httpSecurityConfig().tokenStore().save(accessToken);
             ((HttpServletResponse) servletResponse).addCookie(cookie);
+            // Add the user and groups in the authorization cache
+            OidcGroupMappingServiceProvider.addUserAndGroups(payload.email(), payload.getAllGroups());
             // Redirect the user from the browser (client) side (the authz 'code' becomes invalid)
             servletResponse.getWriter().print("<script type=\"text/javascript\">window.location.href = '/home'</script>");
         }
