@@ -71,7 +71,6 @@
     <maven-shade-plugin.version>3.5.2</maven-shade-plugin.version>
     <jacoco-maven-plugin.version>0.8.11</jacoco-maven-plugin.version>
     <spotless-maven-plugin.version>2.43.0</spotless-maven-plugin.version>
-    <maven-release-plugin.version>3.0.1</maven-release-plugin.version>
     <maven-javadoc-plugin.version>3.6.3</maven-javadoc-plugin.version>
     <maven-source-plugin.version>3.3.0</maven-source-plugin.version>
     <maven-gpg-plugin.version>3.1.0</maven-gpg-plugin.version>
@@ -260,22 +259,6 @@
           <groupId>org.sonatype.plugins</groupId>
           <artifactId>nexus-staging-maven-plugin</artifactId>
           <version>${nexus-staging-maven-plugin.version}</version>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-release-plugin</artifactId>
-          <version>${maven-release-plugin.version}</version>
-          <configuration>
-            <tagNameFormat>v@{project.version}</tagNameFormat>
-            <updateWorkingCopyVersions>true</updateWorkingCopyVersions>
-            <autoVersionSubmodules>true</autoVersionSubmodules>
-            <useReleaseProfile>false</useReleaseProfile>
-            <releaseProfiles>release</releaseProfiles>
-            <localCheckout>true</localCheckout>
-            <remoteTagging>true</remoteTagging>
-            <pushChanges>true</pushChanges>
-            <goals>deploy</goals>
-          </configuration>
         </plugin>
         <plugin>
           <groupId>org.sonatype.central</groupId>
