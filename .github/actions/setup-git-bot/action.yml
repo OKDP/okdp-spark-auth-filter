@@ -1,0 +1,12 @@
+# https://github.com/orgs/community/discussions/26560
+name: Set up GitHub Actions git bot
+description: Configure local git to push as GitHub Actions bot
+
+runs:
+  using: composite
+  steps:
+    - name: Configure git 📦
+      run: |
+        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+      shell: bash
