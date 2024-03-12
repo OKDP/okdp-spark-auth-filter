@@ -54,15 +54,19 @@ public class HttpAuthenticationUtils implements Constants {
                 .findAny());
   }
 
-  /**
-   * Get the domain from an url
-   *
-   * @param url the url
-   * @return the url domain
-   */
+  /** Get the domain from a given url */
   public static String domain(String url) {
     try {
       return new URL(url).getHost();
+    } catch (MalformedURLException e) {
+      throw new OidcClientException(e.getMessage(), e);
+    }
+  }
+
+  /** Check if the given url is secure */
+  public static Boolean isSecure(String url) {
+    try {
+      return new URL(url).getProtocol().equals("https");
     } catch (MalformedURLException e) {
       throw new OidcClientException(e.getMessage(), e);
     }

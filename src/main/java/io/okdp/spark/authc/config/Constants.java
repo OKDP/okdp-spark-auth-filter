@@ -45,6 +45,12 @@ public interface Constants {
   /** The http cookie name where the access token is saved */
   String AUTH_COOKE_NAME = "okdp-spark-cookie";
 
+  /** Transmit the cookie over HTTPS only */
+  String AUTH_COOKE_IS_SECURE = "cookie-is-secure";
+
+  /** The default secure cookie flag */
+  String AUTH_COOKE_DEFAULT_IS_SECURE = "true";
+
   /** The cookie expiration period parameter name in minutes */
   String AUTH_COOKE_MAX_AGE_MINUTES = "cookie-max-age-minutes";
 

@@ -103,7 +103,7 @@ public class CookieTokenStoreTest {
     String cookieName = "spark";
     String cookieDomain = "spark.okdp.local";
     TokenStore tokenStore =
-        CookieTokenStore.of(cookieName, cookieDomain, "E132A72E815F496FFC49B3EC876754F4", 60);
+        CookieTokenStore.of(cookieName, cookieDomain, true, "E132A72E815F496FFC49B3EC876754F4", 60);
 
     // When
     Cookie cookie = tokenStore.save(accessToken);

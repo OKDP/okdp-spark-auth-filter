@@ -30,9 +30,9 @@ import io.okdp.spark.authc.config.OidcConfig;
 import io.okdp.spark.authc.model.AccessToken;
 import io.okdp.spark.authc.model.WellKnownConfiguration;
 import io.okdp.spark.authc.provider.store.CookieTokenStore;
+import io.okdp.spark.authc.utils.HttpAuthenticationUtils;
 import io.okdp.spark.authc.utils.JsonUtils;
 import java.io.IOException;
-import java.net.URL;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
@@ -103,7 +103,11 @@ public class OidcAuthProviderTest implements Constants, CommonTest {
               .authorizeRequests(".*/\\.js", ".*/\\.png")
               .tokenStore(
                   CookieTokenStore.of(
-                      AUTH_COOKE_NAME, new URL(redirectUri).getHost(), cookieEncryptionKey, 60))
+                      AUTH_COOKE_NAME,
+                      HttpAuthenticationUtils.domain(redirectUri),
+                      HttpAuthenticationUtils.isSecure(redirectUri),
+                      cookieEncryptionKey,
+                      60))
               .configure();
     }
   }

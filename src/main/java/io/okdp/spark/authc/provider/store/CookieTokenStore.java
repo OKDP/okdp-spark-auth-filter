@@ -42,6 +42,7 @@ public class CookieTokenStore implements TokenStore {
 
   @NonNull private String cookieName;
   @NonNull private String cookieDomain;
+  @NonNull private Boolean isSecure;
   @NonNull private String encryptionKey;
   @NonNull private Integer cookieMaxAgeSeconds;
 
@@ -75,7 +76,7 @@ public class CookieTokenStore implements TokenStore {
     // Additional enforcements
     cookie.setDomain(cookieDomain);
     cookie.setHttpOnly(true);
-    cookie.setSecure(true);
+    cookie.setSecure(isSecure);
     cookie.setPath("/;SameSite=Strict;");
     return cookie;
   }

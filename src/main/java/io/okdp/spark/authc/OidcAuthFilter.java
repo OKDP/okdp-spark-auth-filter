@@ -16,7 +16,9 @@
 
 package io.okdp.spark.authc;
 
+import static io.okdp.spark.authc.utils.HttpAuthenticationUtils.domain;
 import static io.okdp.spark.authc.utils.HttpAuthenticationUtils.sendError;
+import static io.okdp.spark.authc.utils.PreconditionsUtils.assertCookieSecure;
 import static io.okdp.spark.authc.utils.PreconditionsUtils.assertSupportedScopes;
 import static io.okdp.spark.authc.utils.PreconditionsUtils.checkAuthLogin;
 import static io.okdp.spark.authc.utils.TokenUtils.userInfo;
@@ -74,6 +76,12 @@ public class OidcAuthFilter implements Filter, Constants {
             ofNullable(filterConfig.getInitParameter(AUTH_REDIRECT_URI))
                 .orElse(System.getenv("AUTH_REDIRECT_URI")),
             AUTH_REDIRECT_URI);
+    Boolean isCookieSecure =
+        Boolean.valueOf(
+            ofNullable(filterConfig.getInitParameter(AUTH_COOKE_IS_SECURE))
+                .orElse(
+                    ofNullable(System.getenv("AUTH_COOKE_IS_SECURE"))
+                        .orElse(AUTH_COOKE_DEFAULT_IS_SECURE)));
     String scope =
         PreconditionsUtils.checkNotNull(
             ofNullable(filterConfig.getInitParameter(AUTH_SCOPE))
@@ -123,7 +131,14 @@ public class OidcAuthFilter implements Filter, Constants {
         oidcConfig.wellKnownConfiguration().userInfoEndpoint(),
         oidcConfig.wellKnownConfiguration().scopesSupported());
 
-    assertSupportedScopes(oidcConfig.wellKnownConfiguration().scopesSupported(), scope, AUTH_SCOPE);
+    assertSupportedScopes(
+        oidcConfig.wellKnownConfiguration().scopesSupported(),
+        scope,
+        format("%s|env: %s", AUTH_SCOPE, "AUTH_SCOPE"));
+    assertCookieSecure(
+        oidcConfig.redirectUri(),
+        isCookieSecure,
+        format("%s|env: %s", AUTH_COOKE_IS_SECURE, "AUTH_COOKE_IS_SECURE"));
 
     log.info(
         "Initializing OIDC Auth Provider (access token cookie based storage/cookie name: {},"
@@ -136,7 +151,8 @@ public class OidcAuthFilter implements Filter, Constants {
             .tokenStore(
                 CookieTokenStore.of(
                     AUTH_COOKE_NAME,
-                    HttpAuthenticationUtils.domain(oidcConfig.redirectUri()),
+                    domain(oidcConfig.redirectUri()),
+                    isCookieSecure,
                     encryptionKey,
                     cookieMaxAgeMinutes * 60))
             .configure();

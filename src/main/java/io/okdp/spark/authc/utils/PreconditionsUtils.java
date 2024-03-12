@@ -17,6 +17,7 @@
 package io.okdp.spark.authc.utils;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static io.okdp.spark.authc.utils.HttpAuthenticationUtils.isSecure;
 import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
@@ -58,6 +59,15 @@ public class PreconditionsUtils {
             "The parameter '%s' contains an unsupported scopes '%s' by your oidc provider.\n"
                 + "The supported scopes are: %s",
             label, unsupported, supported));
+  }
+
+  /** The provided redirectUri should be in https if the provided isCookieSecure is true */
+  public static void assertCookieSecure(String redirectUri, Boolean isCookieSecure, String label) {
+    checkArgument(
+        isSecure(redirectUri) == isCookieSecure,
+        format(
+            "The redirect url '%s' should be in https as the cookie secure flag is enabled '%s=%s'",
+            redirectUri, label, isCookieSecure));
   }
 
   /** Check the oidc provider response to the redirect authentication */
