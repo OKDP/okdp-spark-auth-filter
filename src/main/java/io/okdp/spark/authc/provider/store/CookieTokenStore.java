@@ -16,8 +16,11 @@
 
 package io.okdp.spark.authc.provider.store;
 
+import static io.okdp.spark.authc.utils.CompressionUtils.compressToString;
+import static io.okdp.spark.authc.utils.EncryptionUtils.encryptToString;
 import static java.time.Instant.now;
 import static java.util.Date.*;
+import static java.util.Optional.ofNullable;
 
 import io.okdp.spark.authc.model.AccessToken;
 import io.okdp.spark.authc.model.PersistedToken;
@@ -49,6 +52,8 @@ public class CookieTokenStore implements TokenStore {
   /**
    * Compress, encrypt and save the access token in a {@link Cookie}
    *
+   * <p>If the provided {@link AccessToken} is null, save an empty value in a cookie.
+   *
    * @param accessToken the access token response from the oidc provider
    * @return {@link Cookie} containing the compressed and encrypted access token
    */
@@ -56,22 +61,24 @@ public class CookieTokenStore implements TokenStore {
   @SuppressWarnings("unchecked")
   public Cookie save(AccessToken accessToken) {
     // Reduce the token size by saving the token payload part only (user info)
-    String savedToken =
-        JsonUtils.toJson(
-            PersistedToken.builder()
-                .userInfo(TokenUtils.userInfo(accessToken.accessToken()))
-                .refreshToken(accessToken.refreshToken())
-                .expiresIn(accessToken.expiresIn())
-                .expiresAt(from(now().plusSeconds(accessToken.expiresIn())))
-                .build());
     // Compress the access token to overcome 4KB cookie limit (depends on the OIDC providers and
     // their config)
     // Encrypt the content to prevent token corruption
-    Cookie cookie =
-        new Cookie(
-            cookieName,
-            EncryptionUtils.encryptToString(
-                CompressionUtils.compressToString(savedToken), encryptionKey));
+    String cookieValue =
+        ofNullable(accessToken)
+            .map(
+                token ->
+                    JsonUtils.toJson(
+                        PersistedToken.builder()
+                            .userInfo(TokenUtils.userInfo(token.accessToken()))
+                            .refreshToken(token.refreshToken())
+                            .expiresIn(token.expiresIn())
+                            .expiresAt(from(now().plusSeconds(token.expiresIn())))
+                            .build()))
+            .map(tokenAsJson -> encryptToString(compressToString(tokenAsJson), encryptionKey))
+            .orElse("");
+
+    Cookie cookie = new Cookie(cookieName, cookieValue);
     cookie.setMaxAge(cookieMaxAgeSeconds);
     // Additional enforcements
     cookie.setDomain(cookieDomain);

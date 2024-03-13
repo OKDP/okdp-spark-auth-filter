@@ -34,7 +34,7 @@ public class Try<T> {
       return supplier.get();
     } catch (AuthenticationException e) {
       onException.accept(e);
-      throw e;
     }
+    return null;
   }
 }

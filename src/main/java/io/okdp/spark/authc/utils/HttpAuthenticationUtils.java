@@ -38,20 +38,28 @@ import lombok.extern.slf4j.Slf4j;
 public class HttpAuthenticationUtils implements Constants {
 
   /**
-   * Get the cookie content
+   * Get the cookie value matching the provided cookieName from the provided ServletRequest
    *
    * @param cookieName the cookie name
    * @param request the {@link ServletRequest}
    * @return the cookie content if the cookie exists or return empty if it does not exist
    */
   public static Optional<String> getCookieValue(String cookieName, ServletRequest request) {
+    return getCookie(cookieName, request).map(Cookie::getValue).filter(v -> !v.isBlank());
+  }
+
+  /**
+   * Get the cookie matching the provided cookieName from the provided ServletRequest
+   *
+   * @param cookieName the cookie name
+   * @param request the {@link ServletRequest}
+   * @return the cookie if the cookie exists or return empty if it does not exist
+   */
+  public static Optional<Cookie> getCookie(String cookieName, ServletRequest request) {
     Optional<Cookie[]> maybeCookie = ofNullable(((HttpServletRequest) request).getCookies());
     return maybeCookie.flatMap(
         cookies ->
-            Arrays.stream(cookies)
-                .filter(cookie -> cookie.getName().equals(cookieName))
-                .map(Cookie::getValue)
-                .findAny());
+            Arrays.stream(cookies).filter(cookie -> cookie.getName().equals(cookieName)).findAny());
   }
 
   /** Get the domain from a given url */

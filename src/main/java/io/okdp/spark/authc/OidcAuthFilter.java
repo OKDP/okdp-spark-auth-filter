@@ -177,10 +177,20 @@ public class OidcAuthFilter implements Filter, Constants {
 
       if (persistedToken.isExpired()) {
         log.info("The user {} token was expired, renewing ... ", persistedToken.userInfo().email());
+        // Handle scenarios where offline_access is disabled, oidc provider logout or expired the
+        // session/tokens, user logged in with another identifier, etc.
+        // Note that, even the oidc provider had expired the token, it remains valid in the cookie
+        // until it expire there.
+        // So, in case we cannot renew the token, we set the cookie value as empty and let the
+        // current request passes
+        // The subsequent requests will require a user authentication from the oidc provider
         AccessToken accessToken =
             Try.of(() -> authProvider.refreshToken(persistedToken.refreshToken()))
                 .onException(
-                    e -> sendError(servletResponse, e.getHttpStatusCode(), e.getMessage()));
+                    e ->
+                        log.info(
+                            "Unable to renew access token from refresh token, removing cookie and retrying ....., cause: {}",
+                            e.getMessage()));
         Cookie cookie = authProvider.httpSecurityConfig().tokenStore().save(accessToken);
         ((HttpServletResponse) servletResponse).addCookie(cookie);
       }
@@ -226,7 +236,8 @@ public class OidcAuthFilter implements Filter, Constants {
                           () ->
                               new AuthenticationException(
                                   HttpStatus.SC_UNAUTHORIZED,
-                                  "The oidc provider returned an empty user email, you may try to delete your oidc provider cookie from the browser")))
+                                  "Your oidc provider returned an empty user email and may have expired your oidc session! "
+                                      + "Please try to delete your oidc provider cookie from the browser and try again!")))
           .onException(e -> sendError(servletResponse, e.getHttpStatusCode(), e.getMessage()));
 
       Cookie cookie = authProvider.httpSecurityConfig().tokenStore().save(accessToken);

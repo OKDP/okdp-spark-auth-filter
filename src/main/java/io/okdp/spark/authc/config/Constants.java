@@ -43,7 +43,7 @@ public interface Constants {
   int OIDC_REQUEST_TIMEOUT_SECONDS = 30;
 
   /** The http cookie name where the access token is saved */
-  String AUTH_COOKE_NAME = "okdp-spark-cookie";
+  String AUTH_COOKE_NAME = "OKDP_AUTH_SPARK_UI";
 
   /** Transmit the cookie over HTTPS only */
   String AUTH_COOKE_IS_SECURE = "cookie-is-secure";

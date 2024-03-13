@@ -47,9 +47,8 @@ public class TryTest {
 
     // Then
     assertThat(validCall).isEqualTo("OK");
-    assertThat(nonValidCall)
-        .isInstanceOf(AuthenticationException.class)
-        .hasMessageContaining("Bad Request");
-    assertThat(((AuthenticationException) nonValidCall).getHttpStatusCode()).isEqualTo(400);
+    assertThat(nonValidCall).doesNotThrowAnyException();
+
+    assertThat(nonValidCall).isNull();
   }
 }
