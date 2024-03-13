@@ -1,0 +1,62 @@
+name: ci
+
+on:
+  push:
+    paths-ignore:
+      - "README.md"
+      - "release-please-config.json"
+      - ".release-please-manifest.json"
+
+  pull_request:
+    paths-ignore:
+      - "README.md"
+      - "release-please-config.json"
+      - ".release-please-manifest.json"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# https://docs.github.com/en/actions/using-jobs/using-concurrency
+concurrency:
+  # Only cancel in-progress jobs or runs for the current workflow - matches against branch & tags
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  code-style:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo ⚡️
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 11 📦
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '11'
+          cache: 'maven'
+
+      - name: Codestyle check ✅
+        run: mvn -ntp clean spotless:check
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo ⚡️
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 11 📦
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '11'
+
+      - name: Run tests ✅
+        run: mvn -ntp test
+
