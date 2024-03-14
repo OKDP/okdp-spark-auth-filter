@@ -3,7 +3,7 @@
 
 [Apache Spark](https://spark.apache.org/) extension filter to enable Oauth2/OpenID Connect based authentication for Spark UIs and Spark History.
 
-![Architecture](docs/images/authorization-provider.png)
+![Architecture](docs/images/project-components.png)
 
 The project consists of two main components:
 
@@ -20,13 +20,14 @@ For more details, please check the [Authorization Code grant flow](https://datat
 
 # Authorization Grant support matrix
 
-| Authorization Grant                    | Support            | Description                                                                                                                                                                                                             |
-|:---------------------------------------|--------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `Authorization Code`                   | :heavy_check_mark: | Confidential client - Authorization Code standard flow                                                                                                                                                                  |
-| `Authorization Code + PKCE extension`  | :x:                | The [feature](#Use-cases-limitation-and-future-work) will be implemented in a separate UI portal ([See challenges/JS and Browser local cache](https://www.ietf.org/archive/id/draft-ietf-oauth-security-topics-25.html) |
-| `Implicit`                             | :x:                | Deprecated                                                                                                                                                                                                              |
-| `Resource Owner Password Credentials`  | :x:                | Not suitable                                                                                                                                                                                                            |
-| `Client Credentials`                   | :x:                | NA                                                                                                                                                                                                                      |
+| Authorization Grant                    | Support            | Description                                                                                                                                                                                                                                                                                                                                                    |
+|:---------------------------------------|--------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `Authorization Code`                   | :heavy_check_mark: | Confidential client (server side apps) - Authorization Code standard flow.                                                                                                                                                                                                                                                                                     |
+| `Authorization Code + PKCE extension`  | :x:                | [Confidential client](https://www.ietf.org/archive/id/draft-ietf-oauth-security-topics-25.html#name-authorization-code-grant) (next version).                                                                                                                                                                                                                  |
+| `Authorization Code + PKCE extension`  | :x:                | Public client (SPAs/Native apps use cases) - The PKCE flow will be supported if requested ([see also](#use-cases-limitation-and-future-work)). </br> Public client with PKCE flow is described [here](https://www.ietf.org/archive/id/draft-ietf-oauth-security-topics-25.html) and [here](https://danielfett.de/2020/05/16/pkce-vs-nonce-equivalent-or-not/). |
+| `Implicit`                             | :x:                | Deprecated                                                                                                                                                                                                                                                                                                                                                     |
+| `Resource Owner Password Credentials`  | :x:                | Not suitable                                                                                                                                                                                                                                                                                                                                                   |
+| `Client Credentials`                   | :x:                | NA                                                                                                                                                                                                                                                                                                                                                             |
 
 
 # Installation
@@ -263,7 +264,7 @@ In real world kubernetes integration, each spark application submission creates 
 
 Another limitation, is that depending on the oidc provider, the number of redirect URIs per oidc client can be limited and the usage of URIs pattern can also be [prohibited](https://www.ietf.org/archive/id/draft-ietf-oauth-security-topics-25.html). 
 
-A new central portal UI is under development to support more authorization grants (PKCE), simplify dynamic discovery, log/monitoring tracking and provides shortcuts to easily navigate and filter the spark applications.
+A new central portal UI is under development to support more authorization grants (public clients/PKCE), simplify dynamic discovery, log/monitoring tracking and provides shortcuts to easily navigate and filter the spark applications.
 
 
 
