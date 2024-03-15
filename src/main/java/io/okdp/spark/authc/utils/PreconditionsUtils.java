@@ -42,6 +42,13 @@ public class PreconditionsUtils {
     }
   }
 
+  /** Ensures the provided state matches the expected one */
+  public static void checkState(String provided, String expected, Object errorMessage) {
+    if (!provided.contentEquals(expected)) {
+      throw new IllegalStateException(String.valueOf(errorMessage));
+    }
+  }
+
   /**
    * Find the unsupported scopes by the OIDC provider
    *

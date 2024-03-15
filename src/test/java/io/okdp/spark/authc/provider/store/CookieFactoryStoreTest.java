@@ -23,7 +23,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.okdp.spark.authc.model.AccessToken;
 import io.okdp.spark.authc.model.PersistedToken;
 import io.okdp.spark.authc.model.UserInfo;
-import io.okdp.spark.authc.provider.TokenStore;
+import io.okdp.spark.authc.provider.SessionStore;
+import io.okdp.spark.authc.provider.impl.store.CookieSessionStore;
 import io.okdp.spark.authc.utils.TokenUtils;
 import java.io.IOException;
 import java.time.Instant;
@@ -32,7 +33,7 @@ import javax.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class CookieTokenStoreTest {
+public class CookieFactoryStoreTest {
 
   private AccessToken accessToken;
 
@@ -102,12 +103,13 @@ public class CookieTokenStoreTest {
     // Given
     String cookieName = "spark";
     String cookieDomain = "spark.okdp.local";
-    TokenStore tokenStore =
-        CookieTokenStore.of(cookieName, cookieDomain, true, "E132A72E815F496FFC49B3EC876754F4", 60);
+    SessionStore sessionStore =
+        CookieSessionStore.of(
+            cookieName, cookieDomain, true, "E132A72E815F496FFC49B3EC876754F4", 60);
 
     // When
-    Cookie cookie = tokenStore.save(accessToken);
-    PersistedToken persistedToken = tokenStore.readToken(cookie.getValue());
+    Cookie cookie = sessionStore.save(accessToken);
+    PersistedToken persistedToken = sessionStore.readToken(cookie.getValue());
 
     // Then
     assertThat(cookie.getName()).isEqualTo(cookieName);

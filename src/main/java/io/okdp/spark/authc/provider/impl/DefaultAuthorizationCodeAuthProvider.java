@@ -14,57 +14,53 @@
  *    limitations under the License.
  */
 
-package io.okdp.spark.authc.provider;
+package io.okdp.spark.authc.provider.impl;
 
 import static io.okdp.spark.authc.utils.PreconditionsUtils.checkNotNull;
 import static java.lang.String.format;
-import static java.util.Optional.ofNullable;
 import static org.apache.hc.core5.util.Timeout.ofSeconds;
 
-import com.google.common.annotations.VisibleForTesting;
-import io.okdp.spark.authc.config.Constants;
 import io.okdp.spark.authc.config.HttpSecurityConfig;
 import io.okdp.spark.authc.exception.AuthenticationException;
 import io.okdp.spark.authc.model.AccessToken;
+import io.okdp.spark.authc.provider.AuthProvider;
 import io.okdp.spark.authc.utils.JsonUtils;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
-import org.apache.commons.io.IOUtils;
-import org.apache.hc.client5.http.ClientProtocolException;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.client5.http.fluent.Form;
 import org.apache.hc.client5.http.fluent.Request;
-import org.apache.hc.core5.http.HttpEntity;
-import org.apache.hc.core5.http.HttpStatus;
 
 /**
- * The Oauth2/oidc authentication provider implementation
+ * The Confidential Client Oauth2/oidc Authorization Code grant provider implementation
  *
  * @see AuthProvider
  */
-@RequiredArgsConstructor
-@NoArgsConstructor
 @Getter
 @Accessors(fluent = true)
-public class OidcAuthProvider implements Constants, AuthProvider {
+@Slf4j
+public class DefaultAuthorizationCodeAuthProvider extends AbstractAuthorizationCodeAuthProvider {
 
-  @NonNull private HttpSecurityConfig httpSecurityConfig;
+  @NonNull private final HttpSecurityConfig httpSecurityConfig;
 
-  /** {@inheritDoc} */
+  @Builder
+  public DefaultAuthorizationCodeAuthProvider(@NonNull HttpSecurityConfig httpSecurityConfig) {
+    super(httpSecurityConfig);
+    this.httpSecurityConfig = httpSecurityConfig;
+    log.info("Running with Default Authorization Provider (Non PKCE)");
+  }
+
   @Override
   public void redirectUserToAuthorizationEndpoint(ServletResponse servletResponse)
       throws AuthenticationException {
     String authzUrl =
-        String.format(
+        format(
             "%s?client_id=%s&redirect_uri=%s&response_type=%s&scope=%s",
             httpSecurityConfig.oidcConfig().wellKnownConfiguration().authorizationEndpoint(),
             httpSecurityConfig.oidcConfig().clientId(),
@@ -78,10 +74,11 @@ public class OidcAuthProvider implements Constants, AuthProvider {
     }
   }
 
-  /** {@inheritDoc} */
   @Override
-  public AccessToken requestAccessToken(String code) throws AuthenticationException {
-    checkNotNull(code, "code");
+  public AccessToken requestAccessToken(
+      ServletRequest servletRequest, ServletResponse servletResponse)
+      throws AuthenticationException {
+    String code = checkNotNull(servletRequest.getParameter("code"), "code");
 
     Request request =
         Request.post(httpSecurityConfig.oidcConfig().wellKnownConfiguration().tokenEndpoint())
@@ -101,7 +98,6 @@ public class OidcAuthProvider implements Constants, AuthProvider {
     return JsonUtils.loadJsonFromString(doExecute(request), AccessToken.class);
   }
 
-  /** {@inheritDoc} */
   @Override
   public AccessToken refreshToken(String refreshToken) throws AuthenticationException {
     checkNotNull(refreshToken, "refresh_token");
@@ -120,45 +116,5 @@ public class OidcAuthProvider implements Constants, AuthProvider {
             .connectTimeout(ofSeconds(OIDC_REQUEST_TIMEOUT_SECONDS));
 
     return JsonUtils.loadJsonFromString(doExecute(request), AccessToken.class);
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public boolean isAuthorized(ServletRequest servletRequest) {
-    return httpSecurityConfig.patterns().stream()
-        .anyMatch(p -> p.matcher(((HttpServletRequest) servletRequest).getRequestURI()).matches());
-  }
-
-  @VisibleForTesting
-  public String doExecute(Request request) throws AuthenticationException {
-    try {
-      return request
-          .execute()
-          .handleResponse(
-              response -> {
-                final int status = response.getCode();
-                final Optional<HttpEntity> maybeEntity = ofNullable(response.getEntity());
-                String content;
-                try (HttpEntity entity =
-                    maybeEntity.orElseThrow(
-                        () ->
-                            new ClientProtocolException(
-                                format(
-                                    "%s %s - The response does not contain content",
-                                    status, response.getReasonPhrase())))) {
-                  content = IOUtils.toString(entity.getContent(), StandardCharsets.UTF_8);
-                }
-                if (status != HttpStatus.SC_OK) {
-                  throw new AuthenticationException(
-                      status,
-                      format(
-                          "%s %s - Unable to retrieve an access token (%s)",
-                          status, response.getReasonPhrase(), content));
-                }
-                return content;
-              });
-    } catch (IOException e) {
-      throw new AuthenticationException(e.getMessage(), e);
-    }
   }
 }

@@ -14,21 +14,21 @@
  *    limitations under the License.
  */
 
-package io.okdp.spark.authc.provider.store;
+package io.okdp.spark.authc.provider.impl.store;
 
+import static io.okdp.spark.authc.config.Constants.AUTH_STATE_COOKE_NAME;
 import static io.okdp.spark.authc.utils.CompressionUtils.compressToString;
 import static io.okdp.spark.authc.utils.EncryptionUtils.encryptToString;
-import static java.time.Instant.now;
-import static java.util.Date.*;
 import static java.util.Optional.ofNullable;
 
 import io.okdp.spark.authc.model.AccessToken;
+import io.okdp.spark.authc.model.AuthState;
 import io.okdp.spark.authc.model.PersistedToken;
-import io.okdp.spark.authc.provider.TokenStore;
+import io.okdp.spark.authc.provider.SessionStore;
 import io.okdp.spark.authc.utils.CompressionUtils;
 import io.okdp.spark.authc.utils.EncryptionUtils;
 import io.okdp.spark.authc.utils.JsonUtils;
-import io.okdp.spark.authc.utils.TokenUtils;
+import java.util.Optional;
 import javax.servlet.http.Cookie;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -37,11 +37,11 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Cookie token based storage implementation
  *
- * @see TokenStore
+ * @see SessionStore
  */
 @Slf4j
 @RequiredArgsConstructor(staticName = "of")
-public class CookieTokenStore implements TokenStore {
+public class CookieSessionStore implements SessionStore {
 
   @NonNull private String cookieName;
   @NonNull private String cookieDomain;
@@ -66,25 +66,44 @@ public class CookieTokenStore implements TokenStore {
     // Encrypt the content to prevent token corruption
     String cookieValue =
         ofNullable(accessToken)
-            .map(
-                token ->
-                    JsonUtils.toJson(
-                        PersistedToken.builder()
-                            .userInfo(TokenUtils.userInfo(token.accessToken()))
-                            .refreshToken(token.refreshToken())
-                            .expiresIn(token.expiresIn())
-                            .expiresAt(from(now().plusSeconds(token.expiresIn())))
-                            .build()))
+            .map(token -> accessToken.toPersistedToken().toJson())
             .map(tokenAsJson -> encryptToString(compressToString(tokenAsJson), encryptionKey))
             .orElse("");
 
-    Cookie cookie = new Cookie(cookieName, cookieValue);
-    cookie.setMaxAge(cookieMaxAgeSeconds);
-    // Additional enforcements
-    cookie.setDomain(cookieDomain);
-    cookie.setHttpOnly(true);
-    cookie.setSecure(isSecure);
-    cookie.setPath("/;SameSite=Strict;");
+    int maxAge =
+        Optional.of(cookieValue).filter(v -> !v.isBlank()).map(v -> cookieMaxAgeSeconds).orElse(0);
+
+    return CookieFactory.of(cookieName, cookieValue, cookieDomain, isSecure, maxAge).newCookie();
+  }
+
+  /**
+   * Encrypt and save the PKCE state in a {@link Cookie}
+   *
+   * <p>If the provided {@link AuthState} is null, save an empty value in a cookie.
+   *
+   * @param authState the random generated PKCE state
+   * @return {@link Cookie} containing the compressed and encrypted access token
+   */
+  @Override
+  @SuppressWarnings("unchecked")
+  public Cookie save(AuthState authState) {
+    // Reduce the token size by saving the token payload part only (user info)
+    // Compress the access token to overcome 4KB cookie limit (depends on the OIDC providers and
+    // their config)
+    // Encrypt the content to prevent token corruption
+    String cookieValue =
+        ofNullable(authState)
+            .map(state -> authState.toJson())
+            .map(state -> encryptToString(state, encryptionKey))
+            .orElse("");
+
+    int maxAge = Optional.of(cookieValue).filter(v -> !v.isBlank()).map(v -> 5 * 60).orElse(0);
+
+    Cookie cookie =
+        CookieFactory.of(AUTH_STATE_COOKE_NAME, cookieValue, cookieDomain, isSecure, maxAge)
+            .newCookie();
+    cookie.setPath("/");
+
     return cookie;
   }
 
@@ -99,5 +118,38 @@ public class CookieTokenStore implements TokenStore {
     return JsonUtils.loadJsonFromString(
         CompressionUtils.decompress(EncryptionUtils.decrypt(value, encryptionKey)),
         PersistedToken.class);
+  }
+
+  /**
+   * Un-encrypt and load the access token in a {@link PersistedToken}
+   *
+   * @param value the PKCE state value saved in the {@link Cookie}
+   * @return {@link AuthState} containing the PKCE state
+   */
+  @Override
+  public AuthState readPKCEState(String value) {
+    return JsonUtils.loadJsonFromString(
+        EncryptionUtils.decrypt(value, encryptionKey), AuthState.class);
+  }
+
+  @RequiredArgsConstructor(staticName = "of")
+  public static class CookieFactory {
+
+    @NonNull private String cookieName;
+    @NonNull private String cookieValue;
+    @NonNull private String cookieDomain;
+    @NonNull private Boolean isSecure;
+    @NonNull private Integer cookieMaxAgeSeconds;
+
+    public Cookie newCookie() {
+      Cookie cookie = new Cookie(cookieName, cookieValue);
+      cookie.setMaxAge(cookieMaxAgeSeconds);
+      // Additional enforcements
+      cookie.setDomain(cookieDomain);
+      cookie.setHttpOnly(true);
+      cookie.setSecure(isSecure);
+      cookie.setPath("/;SameSite=Strict;");
+      return cookie;
+    }
   }
 }

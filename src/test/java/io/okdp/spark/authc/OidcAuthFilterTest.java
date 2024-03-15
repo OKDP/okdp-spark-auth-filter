@@ -27,7 +27,7 @@ import io.okdp.spark.authc.common.CommonTest;
 import io.okdp.spark.authc.config.Constants;
 import io.okdp.spark.authc.model.PersistedToken;
 import io.okdp.spark.authc.model.WellKnownConfiguration;
-import io.okdp.spark.authc.provider.OidcAuthProvider;
+import io.okdp.spark.authc.provider.impl.DefaultAuthorizationCodeAuthProvider;
 import io.okdp.spark.authc.utils.JsonUtils;
 import io.okdp.spark.authz.OidcGroupMappingServiceProvider;
 import java.io.IOException;
@@ -74,7 +74,7 @@ public class OidcAuthFilterTest implements Constants, CommonTest {
           + ".eyJpc3MiOiJodHRwczovL2RleC5va2RwLmxvY2FsL2RleCIsInN1YiI6IkNnTmliMklTQkd4a1lYQSIsImF1ZCI6ImRleC1vaWRjIiwiZXhwIjoxNzA4NDc2NzE5LCJpYXQiOjE3MDgzOTAzMTksImF0X2hhc2giOiI1WWdud2ZFNmszSjIxQkFpdm1ZaEZnIiwiY19oYXNoIjoiQlhXVjhrZWR4QkhDTHBCaUY0OUMyUSIsImVtYWlsIjoiYm9iQGV4YW1wbGUub3JnIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImdyb3VwcyI6WyJzdXBlcmFkbWlucyJdLCJuYW1lIjoiYm9iIn0"
           + ".hGlrvV_xXpc3h29S3KvYt11bftXnJ6cIu9Db_7Z6dgueVfmmBvB5Ml8inGfaUKj5KzBFvVS2YeSxLfr4yu4H0KWOKUyTIjkQqeGXh0JfOrKvIIViTxKi1U1OKnNmZxTYJCjJzjqvwZAgxlZRcEdizbH4wsNCYmQO9NUJDeULVlv0V7AkvS6jX0k2OrseOSh526l-SyhRVx8d4IXLHDRbr5ulnuR3nlhuUiILCtbpJFCHGB-XuwEkETRvL6F8nMpapG0x_Sw1XL5XZ6OQ1NNYDt11mdKDlKtf9cQi5TbIyk_OJ_Oayr4JU-o3Y3ov6tMs1R2RxIVxZnBQlqp7x5_03g\"\n"
           + "}";
-  private OidcAuthProvider oidcAuthProvider;
+  private DefaultAuthorizationCodeAuthProvider oidcAuthProvider;
 
   @BeforeEach
   public void setUp() throws NoSuchFieldException, IllegalAccessException {
@@ -98,12 +98,13 @@ public class OidcAuthFilterTest implements Constants, CommonTest {
       when(filterConfig.getInitParameter(AUTH_SCOPE)).thenReturn(scope);
       when(filterConfig.getInitParameter(AUTH_COOKIE_ENCRYPTION_KEY))
           .thenReturn(cookieEncryptionKey);
+      when(filterConfig.getInitParameter(AUTH_USE_PKCE)).thenReturn("false");
       oidcAuthFilter.init(filterConfig);
     }
 
     Field field = oidcAuthFilter.getClass().getDeclaredField("authProvider");
     field.setAccessible(true);
-    oidcAuthProvider = spy((OidcAuthProvider) field.get(oidcAuthFilter));
+    oidcAuthProvider = spy((DefaultAuthorizationCodeAuthProvider) field.get(oidcAuthFilter));
     field.set(oidcAuthFilter, oidcAuthProvider);
   }
 
@@ -168,7 +169,10 @@ public class OidcAuthFilterTest implements Constants, CommonTest {
     ArgumentCaptor<Cookie> captor = ArgumentCaptor.forClass(Cookie.class);
     verify(response).addCookie(captor.capture());
     PersistedToken persistedToken =
-        oidcAuthProvider.httpSecurityConfig().tokenStore().readToken(captor.getValue().getValue());
+        oidcAuthProvider
+            .httpSecurityConfig()
+            .sessionStore()
+            .readToken(captor.getValue().getValue());
     assertNotNull(persistedToken);
 
     // Then
@@ -201,7 +205,10 @@ public class OidcAuthFilterTest implements Constants, CommonTest {
     ArgumentCaptor<Cookie> captor = ArgumentCaptor.forClass(Cookie.class);
     verify(response).addCookie(captor.capture());
     PersistedToken persistedToken =
-        oidcAuthProvider.httpSecurityConfig().tokenStore().readToken(captor.getValue().getValue());
+        oidcAuthProvider
+            .httpSecurityConfig()
+            .sessionStore()
+            .readToken(captor.getValue().getValue());
     assertNotNull(persistedToken);
 
     // Then

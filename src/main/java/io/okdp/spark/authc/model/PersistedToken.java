@@ -19,6 +19,7 @@ package io.okdp.spark.authc.model;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.okdp.spark.authc.utils.JsonUtils;
 import java.time.Instant;
 import java.util.Date;
 import lombok.AllArgsConstructor;
@@ -50,5 +51,10 @@ public class PersistedToken {
 
   public boolean isExpired() {
     return Instant.now().isAfter(expiresAt.toInstant());
+  }
+
+  /** Convert this object to json */
+  public String toJson() {
+    return JsonUtils.toJson(this);
   }
 }

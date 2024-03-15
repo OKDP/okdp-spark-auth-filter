@@ -17,9 +17,10 @@
 package io.okdp.spark.authc.provider;
 
 import io.okdp.spark.authc.model.AccessToken;
+import io.okdp.spark.authc.model.AuthState;
 
 /** Each concrete token store should implement this interface */
-public interface TokenStore {
+public interface SessionStore {
 
   /**
    * Save the access token in a {@link T}
@@ -30,10 +31,25 @@ public interface TokenStore {
   <T> T save(AccessToken accessToken);
 
   /**
+   * Save the PKCE state in a {@link T}
+   *
+   * @param authState the PKCE state
+   */
+  <T> T save(AuthState authState);
+
+  /**
    * Read the access token in a {@link T}
    *
-   * @param value the access token string value saved by the TokenStore provider
+   * @param value the access token string value saved by the SessionStore provider
    * @return {@link T} containing the resulting access token
    */
   <T> T readToken(String value);
+
+  /**
+   * Read the PKCE state in a {@link T}
+   *
+   * @param value the PKCE state string value saved by the SessionStore provider
+   * @return {@link T} containing the resulting access token
+   */
+  <T> T readPKCEState(String value);
 }

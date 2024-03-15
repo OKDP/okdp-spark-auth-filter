@@ -29,7 +29,8 @@ import io.okdp.spark.authc.config.HttpSecurityConfig;
 import io.okdp.spark.authc.config.OidcConfig;
 import io.okdp.spark.authc.model.AccessToken;
 import io.okdp.spark.authc.model.WellKnownConfiguration;
-import io.okdp.spark.authc.provider.store.CookieTokenStore;
+import io.okdp.spark.authc.provider.impl.DefaultAuthorizationCodeAuthProvider;
+import io.okdp.spark.authc.provider.impl.store.CookieSessionStore;
 import io.okdp.spark.authc.utils.HttpAuthenticationUtils;
 import io.okdp.spark.authc.utils.JsonUtils;
 import java.io.IOException;
@@ -44,7 +45,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.MockedStatic;
 
-public class OidcAuthProviderTest implements Constants, CommonTest {
+public class DefaultAuthorizationCodeAuthProviderTest implements Constants, CommonTest {
 
   private final String clientId = "dex-oidc";
   private final String redirectUri = "https://spark.okdp.local/home";
@@ -53,7 +54,7 @@ public class OidcAuthProviderTest implements Constants, CommonTest {
   private String accessTokenResponse;
 
   @BeforeEach
-  public void setUp() throws IOException {
+  public void setUp() {
     String issuerUri = "https://dex.okdp.local/dex";
     String clientSecret = "Not@SecurePassw0rd";
     String scope = "openid+profile+email+groups+offline_access";
@@ -92,6 +93,7 @@ public class OidcAuthProviderTest implements Constants, CommonTest {
               .redirectUri(redirectUri)
               .responseType("code")
               .scope(scope)
+              .usePKCE("false")
               .wellKnownConfiguration(
                   JsonUtils.loadJsonFromUrl(
                       format("%s%s", issuerUri, AUTH_ISSUER_WELL_KNOWN_CONFIGURATION),
@@ -101,8 +103,8 @@ public class OidcAuthProviderTest implements Constants, CommonTest {
       authProvider =
           HttpSecurityConfig.create(oidcConfig)
               .authorizeRequests(".*/\\.js", ".*/\\.png")
-              .tokenStore(
-                  CookieTokenStore.of(
+              .sessionStore(
+                  CookieSessionStore.of(
                       AUTH_COOKE_NAME,
                       HttpAuthenticationUtils.domain(redirectUri),
                       HttpAuthenticationUtils.isSecure(redirectUri),
@@ -135,12 +137,15 @@ public class OidcAuthProviderTest implements Constants, CommonTest {
   @Test
   void should_get_access_token_from_authz_code() throws IOException {
     // Given
-    OidcAuthProvider oidcAuthProvider = spy((OidcAuthProvider) authProvider);
+    HttpServletRequest request = mock(HttpServletRequest.class);
+    HttpServletResponse response = mock(HttpServletResponse.class);
+    DefaultAuthorizationCodeAuthProvider oidcAuthProvider =
+        spy((DefaultAuthorizationCodeAuthProvider) authProvider);
     doReturn(accessTokenResponse).when(oidcAuthProvider).doExecute(any(Request.class));
-    String authzCode = "kpxblxm2si3x6ofxufgo54h4j";
+    when(request.getParameter(any(String.class))).thenReturn("kpxblxm2si3x6ofxufgo54h4j");
 
     // When
-    AccessToken accessToken = oidcAuthProvider.requestAccessToken(authzCode);
+    AccessToken accessToken = oidcAuthProvider.requestAccessToken(request, response);
 
     // Then
     assertThat(accessToken)
@@ -150,7 +155,8 @@ public class OidcAuthProviderTest implements Constants, CommonTest {
   @Test
   void should_get_access_token_from_refresh_token() throws IOException {
     // Given
-    OidcAuthProvider oidcAuthProvider = spy((OidcAuthProvider) authProvider);
+    DefaultAuthorizationCodeAuthProvider oidcAuthProvider =
+        spy((DefaultAuthorizationCodeAuthProvider) authProvider);
     doReturn(accessTokenResponse).when(oidcAuthProvider).doExecute(any(Request.class));
     String refreshToken =
         "ChlvaWJmNXBuaG1rdWN0enppaGltaWp1MnJkEhlndmdzZ2tmcnVhd2x6cGV1a2ZnajNqdjJr";
@@ -177,7 +183,8 @@ public class OidcAuthProviderTest implements Constants, CommonTest {
                 .map(Pattern::compile)
                 .collect(toList()));
 
-    when(httpSecurityConfig.configure()).thenReturn(new OidcAuthProvider(httpSecurityConfig));
+    when(httpSecurityConfig.configure())
+        .thenReturn(new DefaultAuthorizationCodeAuthProvider(httpSecurityConfig));
     AuthProvider auth = httpSecurityConfig.configure();
 
     HttpServletRequest request1 = mock(HttpServletRequest.class);
