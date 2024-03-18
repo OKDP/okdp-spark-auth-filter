@@ -186,7 +186,7 @@ spark-submit  --conf spark.ui.filters=io.okdp.spark.authc.OidcAuthFilter \
 Remove the following configuration if your client id is public and your OIDC provider supports PKCE:
 
 ```shell
---conf spark.io.okdp.spark.authc.OidcAuthFilter.param.client-id=<client-id>
+--conf spark.io.okdp.spark.authc.OidcAuthFilter.param.client-secret=<client-secret>
 ```
 
 ### Kubernetes configuration
