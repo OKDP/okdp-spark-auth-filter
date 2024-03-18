@@ -19,6 +19,7 @@ package io.okdp.spark.authc;
 import static io.okdp.spark.authc.utils.HttpAuthenticationUtils.domain;
 import static io.okdp.spark.authc.utils.HttpAuthenticationUtils.sendError;
 import static io.okdp.spark.authc.utils.PreconditionsUtils.assertCookieSecure;
+import static io.okdp.spark.authc.utils.PreconditionsUtils.assertSupportePKCE;
 import static io.okdp.spark.authc.utils.PreconditionsUtils.assertSupportedScopes;
 import static io.okdp.spark.authc.utils.PreconditionsUtils.checkAuthLogin;
 import static io.okdp.spark.authc.utils.TokenUtils.userInfo;
@@ -61,7 +62,6 @@ public class OidcAuthFilter implements Filter, Constants {
 
   @Override
   public void init(FilterConfig filterConfig) {
-
     String issuerUri =
         PreconditionsUtils.checkNotNull(
             ofNullable(filterConfig.getInitParameter(AUTH_ISSUER_URI))
@@ -73,10 +73,8 @@ public class OidcAuthFilter implements Filter, Constants {
                 .orElse(System.getenv("AUTH_CLIENT_ID")),
             AUTH_CLIENT_ID);
     String clientSecret =
-        PreconditionsUtils.checkNotNull(
-            ofNullable(filterConfig.getInitParameter(AUTH_CLIENT_SECRET))
-                .orElse(System.getenv("AUTH_CLIENT_SECRET")),
-            AUTH_CLIENT_SECRET);
+        ofNullable(filterConfig.getInitParameter(AUTH_CLIENT_SECRET))
+            .orElse(System.getenv("AUTH_CLIENT_SECRET"));
     String redirectUri =
         PreconditionsUtils.checkNotNull(
             ofNullable(filterConfig.getInitParameter(AUTH_REDIRECT_URI))
@@ -115,6 +113,17 @@ public class OidcAuthFilter implements Filter, Constants {
         AUTH_CLIENT_ID,
         clientId);
 
+    ofNullable(clientSecret)
+        .ifPresentOrElse(
+            secret ->
+                log.info(
+                    "Client Secret provided - Running with Confidential Client with PKCE support set to '{}'",
+                    usePKCE),
+            () ->
+                log.info(
+                    "Client Secret not provided - Running with Public Client with PKCE support set to '{}'",
+                    usePKCE));
+
     OidcConfig oidcConfig =
         OidcConfig.builder()
             .issuerUri(issuerUri)
@@ -151,9 +160,14 @@ public class OidcAuthFilter implements Filter, Constants {
         oidcConfig.redirectUri(),
         isCookieSecure,
         format("%s|env: %s", AUTH_COOKE_IS_SECURE, "AUTH_COOKE_IS_SECURE"));
+    assertSupportePKCE(
+        oidcConfig.wellKnownConfiguration().supportedPKCECodeChallengeMethods(),
+        usePKCE,
+        clientSecret,
+        format("%s|env: %s", AUTH_CLIENT_SECRET, "AUTH_COOKE_IS_SECURE"));
 
     log.info(
-        "Initializing OIDC Auth Provider (access token cookie based storage/cookie name: {},"
+        "Initializing OIDC Auth Provider (Cookie based storage for High Available session persistence/cookie name: {},"
             + " max-age (minutes): {}) ...",
         AUTH_COOKE_NAME,
         cookieMaxAgeMinutes);

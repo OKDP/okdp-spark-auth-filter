@@ -68,6 +68,20 @@ public class PreconditionsUtils {
             label, unsupported, supported));
   }
 
+  /** The OIDC provider should support PKCE for public clients */
+  public static void assertSupportePKCE(
+      List<String> pkceMethods, String usePkce, String clientSecret, String label) {
+    boolean pkceSupported =
+        (pkceMethods.stream().anyMatch(m -> m.equalsIgnoreCase("S256"))
+                && usePkce.equalsIgnoreCase("auto")
+            || usePkce.equalsIgnoreCase("true"));
+    checkArgument(
+        pkceSupported || clientSecret != null,
+        format(
+            "The client secret %s parameter is mandatory as the OIDC provider does not support PKCE (use-pkce=%s)",
+            label, usePkce));
+  }
+
   /** The provided redirectUri should be in https if the provided isCookieSecure is true */
   public static void assertCookieSecure(String redirectUri, Boolean isCookieSecure, String label) {
     checkArgument(

@@ -34,10 +34,9 @@ public interface AuthProvider {
       throws AuthenticationException;
 
   /**
-   * Retrieve an access token for the authenticated user using his authorization 'code' parameter of
+   * Retrieve an access token for the authenticated user using the authorization 'code' parameter of
    * ({@link ServletRequest})
    *
-   * @param code the authorization code obtained on the first time user login
    * @return the access token ({@link AccessToken}) from the OIDC provider
    * @throws AuthenticationException
    */

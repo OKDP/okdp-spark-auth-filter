@@ -44,7 +44,7 @@ import org.apache.hc.client5.http.fluent.Form;
 import org.apache.hc.client5.http.fluent.Request;
 
 /**
- * The Confidential Client Oauth2/oidc Authorization Code grant provider with PKCE support
+ * The Confidential/Public Client Oauth2/oidc Authorization Code grant provider with PKCE support
  * implementation
  *
  * @see AuthProvider
@@ -115,28 +115,33 @@ public class PKCEAuthorizationCodeAuthProvider extends AbstractAuthorizationCode
         authState.state(),
         state,
         format(
-            "Invalid state, the state does not match with the oidc provider state, expected: <%s>, provided: <%s>",
+            "Invalid state, the state does not match with the oidc provider state, expected: <%s>, provided: <%s>. Please retry!",
             authState.state(), state));
 
     String codeVerifier = checkNotNull(authState.codeVerifier(), "code_verifier");
+
+    Form form =
+        Form.form()
+            .add("client_id", httpSecurityConfig.oidcConfig().clientId())
+            .add("grant_type", "authorization_code")
+            .add("code", code)
+            .add("code_verifier", codeVerifier)
+            .add("redirect_uri", httpSecurityConfig.oidcConfig().redirectUri());
+
+    Form newform =
+        Optional.ofNullable(httpSecurityConfig.oidcConfig().clientSecret())
+            .map(clientSecret -> form.add("client_secret", clientSecret))
+            .orElse(form);
 
     Request request =
         Request.post(httpSecurityConfig.oidcConfig().wellKnownConfiguration().tokenEndpoint())
             .addHeader("cache-control", "no-cache")
             .addHeader("content-type", "application/x-www-form-urlencoded")
-            .bodyForm(
-                Form.form()
-                    .add("client_id", httpSecurityConfig.oidcConfig().clientId())
-                    .add("client_secret", httpSecurityConfig.oidcConfig().clientSecret())
-                    .add("grant_type", "authorization_code")
-                    .add("code", code)
-                    .add("code_verifier", codeVerifier)
-                    .add("redirect_uri", httpSecurityConfig.oidcConfig().redirectUri())
-                    .build())
+            .bodyForm(newform.build())
             .responseTimeout(ofSeconds(OIDC_REQUEST_TIMEOUT_SECONDS))
             .connectTimeout(ofSeconds(OIDC_REQUEST_TIMEOUT_SECONDS));
 
-    // remove the auth state cookie
+    // Remove the auth state cookie
     Cookie cookie = httpSecurityConfig.sessionStore().save((AuthState) null);
     ((HttpServletResponse) servletResponse).addCookie(cookie);
 
@@ -146,17 +151,22 @@ public class PKCEAuthorizationCodeAuthProvider extends AbstractAuthorizationCode
   @Override
   public AccessToken refreshToken(String refreshToken) throws AuthenticationException {
     checkNotNull(refreshToken, "refresh_token");
+    Form form =
+        Form.form()
+            .add("client_id", httpSecurityConfig.oidcConfig().clientId())
+            .add("grant_type", "refresh_token")
+            .add("refresh_token", refreshToken);
+
+    Form newform =
+        Optional.ofNullable(httpSecurityConfig.oidcConfig().clientSecret())
+            .map(clientSecret -> form.add("client_secret", clientSecret))
+            .orElse(form);
+
     Request request =
         Request.post(httpSecurityConfig.oidcConfig().wellKnownConfiguration().tokenEndpoint())
             .addHeader("cache-control", "no-cache")
             .addHeader("content-type", "application/x-www-form-urlencoded")
-            .bodyForm(
-                Form.form()
-                    .add("client_id", httpSecurityConfig.oidcConfig().clientId())
-                    .add("client_secret", httpSecurityConfig.oidcConfig().clientSecret())
-                    .add("grant_type", "refresh_token")
-                    .add("refresh_token", refreshToken)
-                    .build())
+            .bodyForm(newform.build())
             .responseTimeout(ofSeconds(OIDC_REQUEST_TIMEOUT_SECONDS))
             .connectTimeout(ofSeconds(OIDC_REQUEST_TIMEOUT_SECONDS));
 

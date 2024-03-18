@@ -35,7 +35,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Cookie token based storage implementation
+ * Cookie token/Auth state based storage implementation
  *
  * @see SessionStore
  */
