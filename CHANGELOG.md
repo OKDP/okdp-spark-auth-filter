@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.0.0...v1.1.0) (2024-03-18)
+
+
+### Features
+
+* Authentication - Add PKCE support for confidential clients ([97de4d9](https://github.com/OKDP/okdp-spark-auth-filter/commit/97de4d968be347abab58b462c4af250e214ff542))
+* Authentication - Add PKCE support for public clients ([ed09307](https://github.com/OKDP/okdp-spark-auth-filter/commit/ed09307e9d1ed320381ff3e226ed15a63d774295))
+
 ## 1.0.0 (2024-03-14)
 
 
