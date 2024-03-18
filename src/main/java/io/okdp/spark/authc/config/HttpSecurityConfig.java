@@ -19,8 +19,9 @@ package io.okdp.spark.authc.config;
 import static java.util.Arrays.stream;
 
 import io.okdp.spark.authc.provider.AuthProvider;
-import io.okdp.spark.authc.provider.OidcAuthProvider;
-import io.okdp.spark.authc.provider.TokenStore;
+import io.okdp.spark.authc.provider.SessionStore;
+import io.okdp.spark.authc.provider.impl.DefaultAuthorizationCodeAuthProvider;
+import io.okdp.spark.authc.provider.impl.PKCEAuthorizationCodeAuthProvider;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -29,15 +30,17 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
 
 @RequiredArgsConstructor(staticName = "create")
 @Getter
 @Accessors(fluent = true)
+@Slf4j
 public class HttpSecurityConfig {
 
   private final List<Pattern> patterns = new ArrayList<>();
   @NonNull private OidcConfig oidcConfig;
-  private TokenStore tokenStore;
+  private SessionStore sessionStore;
 
   /**
    * Skip authentication for the requests with the provided URL patterns
@@ -50,17 +53,29 @@ public class HttpSecurityConfig {
   }
 
   /**
-   * The token store {@link TokenStore} implementation managing the access token persistence
+   * The token store {@link SessionStore} implementation managing the access token persistence
    *
-   * @see io.okdp.spark.authc.provider.TokenStore
+   * @see SessionStore
    */
-  public HttpSecurityConfig tokenStore(TokenStore tokenStore) {
-    this.tokenStore = tokenStore;
+  public HttpSecurityConfig sessionStore(SessionStore sessionStore) {
+    this.sessionStore = sessionStore;
     return this;
   }
 
-  /** Configure the security rules */
+  /** Configure the auth provider */
   public AuthProvider configure() {
-    return new OidcAuthProvider(this);
+    switch (oidcConfig.usePKCE().toLowerCase()) {
+      case "true":
+        return new PKCEAuthorizationCodeAuthProvider(this);
+      case "auto":
+        List<String> supportedMethods =
+            oidcConfig.wellKnownConfiguration().supportedPKCECodeChallengeMethods();
+        return !supportedMethods.isEmpty()
+            ? new PKCEAuthorizationCodeAuthProvider(this)
+            : new DefaultAuthorizationCodeAuthProvider(this);
+      case "false":
+      default:
+        return new DefaultAuthorizationCodeAuthProvider(this);
+    }
   }
 }

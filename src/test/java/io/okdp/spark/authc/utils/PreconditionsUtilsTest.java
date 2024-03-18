@@ -16,12 +16,14 @@
 
 package io.okdp.spark.authc.utils;
 
+import static io.okdp.spark.authc.utils.PreconditionsUtils.assertSupportePKCE;
 import static io.okdp.spark.authc.utils.PreconditionsUtils.assertSupportedScopes;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.ThrowableAssert.catchThrowable;
 
+import java.util.List;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.jupiter.api.Test;
 
@@ -94,5 +96,44 @@ public class PreconditionsUtilsTest {
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("'[groups]'")
         .hasMessageContaining("scope");
+  }
+
+  @Test
+  public void should_support_pkce_for_public_clients() {
+
+    // when
+    ThrowingCallable validConf1 =
+        () -> assertSupportePKCE(asList("plain", "S256"), "auto", null, "client-secret");
+
+    ThrowingCallable validConf2 =
+        () -> assertSupportePKCE(asList("plain", "S256"), "true", null, "client-secret");
+
+    ThrowingCallable validConf3 =
+        () -> assertSupportePKCE(List.of(), "true", null, "client-secret");
+
+    ThrowingCallable validConf4 =
+        () -> assertSupportePKCE(List.of(), "false", "ClientSecret@", "client-secret");
+
+    ThrowingCallable invalidConf1 =
+        () -> assertSupportePKCE(asList("plain", "S256"), "false", null, "client-secret");
+
+    ThrowingCallable invalidConf2 =
+        () -> assertSupportePKCE(List.of(), "auto", null, "client-secret");
+
+    // Then
+    assertThatCode(validConf1).doesNotThrowAnyException();
+    assertThatCode(validConf2).doesNotThrowAnyException();
+    assertThatCode(validConf3).doesNotThrowAnyException();
+    assertThatCode(validConf4).doesNotThrowAnyException();
+
+    assertThatCode(invalidConf1)
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("use-pkce=false")
+        .hasMessageContaining("client-secret");
+
+    assertThatCode(invalidConf2)
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("use-pkce=auto")
+        .hasMessageContaining("client-secret");
   }
 }

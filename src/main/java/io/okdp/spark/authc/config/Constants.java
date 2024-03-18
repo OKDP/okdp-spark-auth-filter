@@ -45,6 +45,9 @@ public interface Constants {
   /** The http cookie name where the access token is saved */
   String AUTH_COOKE_NAME = "OKDP_AUTH_SPARK_UI";
 
+  /** The http auth state cookie name which holds the auth state and PKCE data */
+  String AUTH_STATE_COOKE_NAME = AUTH_COOKE_NAME + "_STATE";
+
   /** Transmit the cookie over HTTPS only */
   String AUTH_COOKE_IS_SECURE = "cookie-is-secure";
 
@@ -56,6 +59,9 @@ public interface Constants {
 
   /** The default cookie expiration period minutes */
   int AUTH_COOKE_DEFAULT_MAX_AGE_MINUTES = 12 * 60;
+
+  /** Use PKCE (true|false|auto) */
+  String AUTH_USE_PKCE = "use-pkce";
 
   /** The cookie encryption key parameter name */
   String AUTH_COOKIE_ENCRYPTION_KEY = "cookie-cipher-secret-key";

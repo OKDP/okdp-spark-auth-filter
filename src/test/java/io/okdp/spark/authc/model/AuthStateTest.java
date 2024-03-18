@@ -14,23 +14,23 @@
  *    limitations under the License.
  */
 
-package io.okdp.spark.authc.config;
+package io.okdp.spark.authc.model;
 
-import io.okdp.spark.authc.model.WellKnownConfiguration;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.experimental.Accessors;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
-@Builder
-@Getter
-@Accessors(fluent = true)
-public class OidcConfig {
-  private String issuerUri;
-  private String clientId;
-  private String clientSecret;
-  private String redirectUri;
-  private String responseType;
-  private String scope;
-  private WellKnownConfiguration wellKnownConfiguration;
-  private String usePKCE;
+import org.junit.jupiter.api.Test;
+
+public class AuthStateTest {
+
+  @Test
+  public void test() {
+
+    // When
+    AuthState authState = AuthState.randomState();
+
+    // Then
+    assertThat(authState.state()).isNotBlank();
+    assertThat(authState.codeVerifier().length()).isBetween(43, 128);
+    assertThat(authState.codeVerifier()).isASCII();
+  }
 }

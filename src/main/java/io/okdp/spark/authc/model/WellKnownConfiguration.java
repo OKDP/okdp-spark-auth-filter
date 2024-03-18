@@ -16,6 +16,8 @@
 
 package io.okdp.spark.authc.model;
 
+import static java.util.Collections.emptyList;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
@@ -38,4 +40,7 @@ public class WellKnownConfiguration {
 
   @JsonProperty("scopes_supported")
   private List<String> scopesSupported;
+
+  @JsonProperty("code_challenge_methods_supported")
+  private List<String> supportedPKCECodeChallengeMethods = emptyList();
 }

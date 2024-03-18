@@ -19,6 +19,7 @@ package io.okdp.spark.authc;
 import static io.okdp.spark.authc.utils.HttpAuthenticationUtils.domain;
 import static io.okdp.spark.authc.utils.HttpAuthenticationUtils.sendError;
 import static io.okdp.spark.authc.utils.PreconditionsUtils.assertCookieSecure;
+import static io.okdp.spark.authc.utils.PreconditionsUtils.assertSupportePKCE;
 import static io.okdp.spark.authc.utils.PreconditionsUtils.assertSupportedScopes;
 import static io.okdp.spark.authc.utils.PreconditionsUtils.checkAuthLogin;
 import static io.okdp.spark.authc.utils.TokenUtils.userInfo;
@@ -34,7 +35,7 @@ import io.okdp.spark.authc.model.PersistedToken;
 import io.okdp.spark.authc.model.UserInfo;
 import io.okdp.spark.authc.model.WellKnownConfiguration;
 import io.okdp.spark.authc.provider.AuthProvider;
-import io.okdp.spark.authc.provider.store.CookieTokenStore;
+import io.okdp.spark.authc.provider.impl.store.CookieSessionStore;
 import io.okdp.spark.authc.utils.HttpAuthenticationUtils;
 import io.okdp.spark.authc.utils.JsonUtils;
 import io.okdp.spark.authc.utils.PreconditionsUtils;
@@ -42,7 +43,12 @@ import io.okdp.spark.authc.utils.exception.Try;
 import io.okdp.spark.authz.OidcGroupMappingServiceProvider;
 import java.io.IOException;
 import java.util.Optional;
-import javax.servlet.*;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -51,11 +57,11 @@ import org.apache.hc.core5.http.HttpStatus;
 
 @Slf4j
 public class OidcAuthFilter implements Filter, Constants {
+
   private AuthProvider authProvider;
 
   @Override
   public void init(FilterConfig filterConfig) {
-
     String issuerUri =
         PreconditionsUtils.checkNotNull(
             ofNullable(filterConfig.getInitParameter(AUTH_ISSUER_URI))
@@ -67,10 +73,8 @@ public class OidcAuthFilter implements Filter, Constants {
                 .orElse(System.getenv("AUTH_CLIENT_ID")),
             AUTH_CLIENT_ID);
     String clientSecret =
-        PreconditionsUtils.checkNotNull(
-            ofNullable(filterConfig.getInitParameter(AUTH_CLIENT_SECRET))
-                .orElse(System.getenv("AUTH_CLIENT_SECRET")),
-            AUTH_CLIENT_SECRET);
+        ofNullable(filterConfig.getInitParameter(AUTH_CLIENT_SECRET))
+            .orElse(System.getenv("AUTH_CLIENT_SECRET"));
     String redirectUri =
         PreconditionsUtils.checkNotNull(
             ofNullable(filterConfig.getInitParameter(AUTH_REDIRECT_URI))
@@ -98,6 +102,9 @@ public class OidcAuthFilter implements Filter, Constants {
                 .orElse(
                     ofNullable(System.getenv("AUTH_COOKE_MAX_AGE_SECONDS"))
                         .orElse(String.valueOf(AUTH_COOKE_DEFAULT_MAX_AGE_MINUTES))));
+    String usePKCE =
+        ofNullable(filterConfig.getInitParameter(AUTH_USE_PKCE))
+            .orElse(ofNullable(System.getenv("AUTH_USE_PKCE")).orElse("auto"));
 
     log.info(
         "Initializing OIDC Auth filter ({}: <{}>,  {}: <{}>) ...",
@@ -105,6 +112,17 @@ public class OidcAuthFilter implements Filter, Constants {
         issuerUri,
         AUTH_CLIENT_ID,
         clientId);
+
+    ofNullable(clientSecret)
+        .ifPresentOrElse(
+            secret ->
+                log.info(
+                    "Client Secret provided - Running with Confidential Client with PKCE support set to '{}'",
+                    usePKCE),
+            () ->
+                log.info(
+                    "Client Secret not provided - Running with Public Client with PKCE support set to '{}'",
+                    usePKCE));
 
     OidcConfig oidcConfig =
         OidcConfig.builder()
@@ -114,6 +132,7 @@ public class OidcAuthFilter implements Filter, Constants {
             .redirectUri(redirectUri)
             .responseType("code")
             .scope(scope)
+            .usePKCE(usePKCE)
             .wellKnownConfiguration(
                 JsonUtils.loadJsonFromUrl(
                     format("%s%s", issuerUri, AUTH_ISSUER_WELL_KNOWN_CONFIGURATION),
@@ -125,11 +144,13 @@ public class OidcAuthFilter implements Filter, Constants {
             + "Authorization Endpoint: {}, \n"
             + "Token Endpoint: {}, \n"
             + "User Info Endpoint: {}, \n"
-            + "Supported Scopes: {}",
+            + "Supported Scopes: {}, \n"
+            + "PKCE Supported Code Challenge Methods: {}, \n",
         oidcConfig.wellKnownConfiguration().authorizationEndpoint(),
         oidcConfig.wellKnownConfiguration().tokenEndpoint(),
         oidcConfig.wellKnownConfiguration().userInfoEndpoint(),
-        oidcConfig.wellKnownConfiguration().scopesSupported());
+        oidcConfig.wellKnownConfiguration().scopesSupported(),
+        oidcConfig.wellKnownConfiguration().supportedPKCECodeChallengeMethods());
 
     assertSupportedScopes(
         oidcConfig.wellKnownConfiguration().scopesSupported(),
@@ -139,17 +160,22 @@ public class OidcAuthFilter implements Filter, Constants {
         oidcConfig.redirectUri(),
         isCookieSecure,
         format("%s|env: %s", AUTH_COOKE_IS_SECURE, "AUTH_COOKE_IS_SECURE"));
+    assertSupportePKCE(
+        oidcConfig.wellKnownConfiguration().supportedPKCECodeChallengeMethods(),
+        usePKCE,
+        clientSecret,
+        format("%s|env: %s", AUTH_CLIENT_SECRET, "AUTH_COOKE_IS_SECURE"));
 
     log.info(
-        "Initializing OIDC Auth Provider (access token cookie based storage/cookie name: {},"
+        "Initializing OIDC Auth Provider (Cookie based storage for High Available session persistence/cookie name: {},"
             + " max-age (minutes): {}) ...",
         AUTH_COOKE_NAME,
         cookieMaxAgeMinutes);
     authProvider =
         HttpSecurityConfig.create(oidcConfig)
             .authorizeRequests(".*/.*\\.css", ".*/.*\\.js", ".*/.*\\.png")
-            .tokenStore(
-                CookieTokenStore.of(
+            .sessionStore(
+                CookieSessionStore.of(
                     AUTH_COOKE_NAME,
                     domain(oidcConfig.redirectUri()),
                     isCookieSecure,
@@ -173,7 +199,7 @@ public class OidcAuthFilter implements Filter, Constants {
         HttpAuthenticationUtils.getCookieValue(AUTH_COOKE_NAME, servletRequest);
     if (maybeAuthCookie.isPresent()) {
       PersistedToken persistedToken =
-          authProvider.httpSecurityConfig().tokenStore().readToken(maybeAuthCookie.get());
+          authProvider.httpSecurityConfig().sessionStore().readToken(maybeAuthCookie.get());
 
       if (persistedToken.isExpired()) {
         log.info("The user {} token was expired, renewing ... ", persistedToken.userInfo().email());
@@ -191,7 +217,7 @@ public class OidcAuthFilter implements Filter, Constants {
                         log.info(
                             "Unable to renew access token from refresh token, removing cookie and retrying ....., cause: {}",
                             e.getMessage()));
-        Cookie cookie = authProvider.httpSecurityConfig().tokenStore().save(accessToken);
+        Cookie cookie = authProvider.httpSecurityConfig().sessionStore().save(accessToken);
         ((HttpServletResponse) servletResponse).addCookie(cookie);
       }
       // Add the user and groups in the user/group mappings authorization cache
@@ -219,7 +245,7 @@ public class OidcAuthFilter implements Filter, Constants {
       // Exchange the obtained 'code' with an access token by issuing a request against the oidc
       // provider
       AccessToken accessToken =
-          Try.of(() -> authProvider.requestAccessToken(maybeAuthzCode.get()))
+          Try.of(() -> authProvider.requestAccessToken(servletRequest, servletResponse))
               .onException(e -> sendError(servletResponse, e.getHttpStatusCode(), e.getMessage()));
       UserInfo userInfo = userInfo(accessToken.accessToken());
       log.info(
@@ -240,7 +266,7 @@ public class OidcAuthFilter implements Filter, Constants {
                                       + "Please try to delete your oidc provider cookie from the browser and try again!")))
           .onException(e -> sendError(servletResponse, e.getHttpStatusCode(), e.getMessage()));
 
-      Cookie cookie = authProvider.httpSecurityConfig().tokenStore().save(accessToken);
+      Cookie cookie = authProvider.httpSecurityConfig().sessionStore().save(accessToken);
       ((HttpServletResponse) servletResponse).addCookie(cookie);
       // Add the user and groups in the user/group mappings authorization cache
       OidcGroupMappingServiceProvider.addUserAndGroups(

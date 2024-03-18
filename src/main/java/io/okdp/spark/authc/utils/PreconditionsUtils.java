@@ -42,6 +42,13 @@ public class PreconditionsUtils {
     }
   }
 
+  /** Ensures the provided state matches the expected one */
+  public static void checkState(String provided, String expected, Object errorMessage) {
+    if (!provided.contentEquals(expected)) {
+      throw new IllegalStateException(String.valueOf(errorMessage));
+    }
+  }
+
   /**
    * Find the unsupported scopes by the OIDC provider
    *
@@ -59,6 +66,20 @@ public class PreconditionsUtils {
             "The parameter '%s' contains an unsupported scopes '%s' by your oidc provider.\n"
                 + "The supported scopes are: %s",
             label, unsupported, supported));
+  }
+
+  /** The OIDC provider should support PKCE for public clients */
+  public static void assertSupportePKCE(
+      List<String> pkceMethods, String usePkce, String clientSecret, String label) {
+    boolean pkceSupported =
+        (pkceMethods.stream().anyMatch(m -> m.equalsIgnoreCase("S256"))
+                && usePkce.equalsIgnoreCase("auto")
+            || usePkce.equalsIgnoreCase("true"));
+    checkArgument(
+        pkceSupported || clientSecret != null,
+        format(
+            "The client secret %s parameter is mandatory as the OIDC provider does not support PKCE (use-pkce=%s)",
+            label, usePkce));
   }
 
   /** The provided redirectUri should be in https if the provided isCookieSecure is true */
