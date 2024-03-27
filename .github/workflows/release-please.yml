@@ -27,7 +27,9 @@ jobs:
     outputs:
       release_created: ${{ steps.release-please.outputs.release_created }}
       tag_name: ${{ steps.release-please.outputs.tag_name }}
-    if: github.repository_owner == 'OKDP' && github.event.pull_request.merged == true
+    # Skip the release process in the fork
+    # The pull request should come from the same repo (github_token from the fork does not have write permissions)
+    if: github.repository_owner == 'OKDP' && github.event.pull_request.merged == true && github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: google-github-actions/release-please-action@v4
         id: release-please
