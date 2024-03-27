@@ -18,6 +18,7 @@ package io.okdp.spark.authc.model;
 
 import static java.util.Collections.emptyList;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
@@ -30,6 +31,9 @@ import lombok.experimental.Accessors;
 @Accessors(fluent = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class UserInfo {
+
+  @JsonProperty("sub")
+  private String sub;
 
   @JsonProperty("name")
   private String name;
@@ -48,6 +52,7 @@ public class UserInfo {
    *
    * @return the list of the groups or roles
    */
+  @JsonIgnore
   public List<String> getGroupsAndRoles() {
     return Stream.concat(groups.stream(), roles.stream()).collect(Collectors.toList());
   }

@@ -63,6 +63,9 @@ public interface Constants {
   /** Use PKCE (true|false|auto) */
   String AUTH_USE_PKCE = "use-pkce";
 
+  /** The user id wich will be extracted from the access token (EMAIL|SUB) */
+  String AUTH_USER_ID = "user-id";
+
   /** The cookie encryption key parameter name */
   String AUTH_COOKIE_ENCRYPTION_KEY = "cookie-cipher-secret-key";
 

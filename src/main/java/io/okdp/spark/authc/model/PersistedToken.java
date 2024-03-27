@@ -17,8 +17,10 @@
 package io.okdp.spark.authc.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.okdp.spark.authc.provider.IdentityProvider;
 import io.okdp.spark.authc.utils.JsonUtils;
 import java.time.Instant;
 import java.util.Date;
@@ -36,6 +38,9 @@ import lombok.experimental.Accessors;
 @NoArgsConstructor
 public class PersistedToken {
 
+  @JsonProperty("identity_provider")
+  private IdentityProvider identityProvider;
+
   @JsonProperty("access_token_payload")
   private UserInfo userInfo;
 
@@ -49,6 +54,7 @@ public class PersistedToken {
   @JsonProperty("refresh_token")
   private String refreshToken;
 
+  @JsonIgnore
   public boolean isExpired() {
     return Instant.now().isAfter(expiresAt.toInstant());
   }
@@ -56,5 +62,10 @@ public class PersistedToken {
   /** Convert this object to json */
   public String toJson() {
     return JsonUtils.toJson(this);
+  }
+
+  /** Extract the id from UserInfo */
+  public String id() {
+    return identityProvider.extractId(this.userInfo);
   }
 }

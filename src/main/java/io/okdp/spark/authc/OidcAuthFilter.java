@@ -22,7 +22,6 @@ import static io.okdp.spark.authc.utils.PreconditionsUtils.assertCookieSecure;
 import static io.okdp.spark.authc.utils.PreconditionsUtils.assertSupportePKCE;
 import static io.okdp.spark.authc.utils.PreconditionsUtils.assertSupportedScopes;
 import static io.okdp.spark.authc.utils.PreconditionsUtils.checkAuthLogin;
-import static io.okdp.spark.authc.utils.TokenUtils.userInfo;
 import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
 
@@ -32,13 +31,14 @@ import io.okdp.spark.authc.config.OidcConfig;
 import io.okdp.spark.authc.exception.AuthenticationException;
 import io.okdp.spark.authc.model.AccessToken;
 import io.okdp.spark.authc.model.PersistedToken;
-import io.okdp.spark.authc.model.UserInfo;
 import io.okdp.spark.authc.model.WellKnownConfiguration;
 import io.okdp.spark.authc.provider.AuthProvider;
+import io.okdp.spark.authc.provider.IdentityProviderFactory;
 import io.okdp.spark.authc.provider.impl.store.CookieSessionStore;
 import io.okdp.spark.authc.utils.HttpAuthenticationUtils;
 import io.okdp.spark.authc.utils.JsonUtils;
 import io.okdp.spark.authc.utils.PreconditionsUtils;
+import io.okdp.spark.authc.utils.TokenUtils;
 import io.okdp.spark.authc.utils.exception.Try;
 import io.okdp.spark.authz.OidcGroupMappingServiceProvider;
 import java.io.IOException;
@@ -105,6 +105,9 @@ public class OidcAuthFilter implements Filter, Constants {
     String usePKCE =
         ofNullable(filterConfig.getInitParameter(AUTH_USE_PKCE))
             .orElse(ofNullable(System.getenv("AUTH_USE_PKCE")).orElse("auto"));
+    String idProvider =
+        ofNullable(filterConfig.getInitParameter(AUTH_USER_ID))
+            .orElse(ofNullable(System.getenv("AUTH_USER_ID")).orElse("Email"));
 
     log.info(
         "Initializing OIDC Auth filter ({}: <{}>,  {}: <{}>) ...",
@@ -133,6 +136,7 @@ public class OidcAuthFilter implements Filter, Constants {
             .responseType("code")
             .scope(scope)
             .usePKCE(usePKCE)
+            .identityProvider(IdentityProviderFactory.from(TokenUtils.capitalize(idProvider)))
             .wellKnownConfiguration(
                 JsonUtils.loadJsonFromUrl(
                     format("%s%s", issuerUri, AUTH_ISSUER_WELL_KNOWN_CONFIGURATION),
@@ -217,15 +221,16 @@ public class OidcAuthFilter implements Filter, Constants {
                         log.info(
                             "Unable to renew access token from refresh token, removing cookie and retrying ....., cause: {}",
                             e.getMessage()));
-        Cookie cookie = authProvider.httpSecurityConfig().sessionStore().save(accessToken);
+        PersistedToken pToken = authProvider.httpSecurityConfig().toPersistedToken(accessToken);
+        Cookie cookie = authProvider.httpSecurityConfig().sessionStore().save(pToken);
         ((HttpServletResponse) servletResponse).addCookie(cookie);
       }
       // Add the user and groups in the user/group mappings authorization cache
       OidcGroupMappingServiceProvider.addUserAndGroups(
-          persistedToken.userInfo().email(), persistedToken.userInfo().getGroupsAndRoles());
+          persistedToken.id(), persistedToken.userInfo().getGroupsAndRoles());
       filterChain.doFilter(
           new PrincipalHttpServletRequestWrapper(
-              (HttpServletRequest) servletRequest, persistedToken.userInfo().email()),
+              (HttpServletRequest) servletRequest, persistedToken.id()),
           servletResponse);
       return;
     }
@@ -247,30 +252,33 @@ public class OidcAuthFilter implements Filter, Constants {
       AccessToken accessToken =
           Try.of(() -> authProvider.requestAccessToken(servletRequest, servletResponse))
               .onException(e -> sendError(servletResponse, e.getHttpStatusCode(), e.getMessage()));
-      UserInfo userInfo = userInfo(accessToken.accessToken());
+      PersistedToken persistedToken =
+          authProvider.httpSecurityConfig().toPersistedToken(accessToken);
+      // UserInfo userInfo = authProvider.httpSecurityConfig().userInfo(accessToken.accessToken());
       log.info(
-          "Successfully authenticated user ({}): {} (roles: {}, groups: {})",
-          userInfo.name(),
-          userInfo.email(),
-          userInfo.roles(),
-          userInfo.groups());
+          "Successfully authenticated user ({}): email {} sub {} (roles: {}, groups: {})",
+          persistedToken.userInfo().name(),
+          persistedToken.userInfo().email(),
+          persistedToken.userInfo().sub(),
+          persistedToken.userInfo().roles(),
+          persistedToken.userInfo().groups());
 
       Try.of(
               () ->
-                  ofNullable(userInfo.email())
+                  ofNullable(persistedToken.id())
                       .orElseThrow(
                           () ->
                               new AuthenticationException(
                                   HttpStatus.SC_UNAUTHORIZED,
-                                  "Your oidc provider returned an empty user email and may have expired your oidc session! "
+                                  "Your oidc provider returned an empty user id and may have expired your oidc session! "
                                       + "Please try to delete your oidc provider cookie from the browser and try again!")))
           .onException(e -> sendError(servletResponse, e.getHttpStatusCode(), e.getMessage()));
 
-      Cookie cookie = authProvider.httpSecurityConfig().sessionStore().save(accessToken);
+      Cookie cookie = authProvider.httpSecurityConfig().sessionStore().save(persistedToken);
       ((HttpServletResponse) servletResponse).addCookie(cookie);
       // Add the user and groups in the user/group mappings authorization cache
       OidcGroupMappingServiceProvider.addUserAndGroups(
-          userInfo.email(), userInfo.getGroupsAndRoles());
+          persistedToken.id(), persistedToken.userInfo().getGroupsAndRoles());
       // Redirect the user from the browser (client) side into spark/history UI home page (i.e.
       // remove the authz 'code' from the browser)
       servletResponse

@@ -16,12 +16,8 @@
 
 package io.okdp.spark.authc.model;
 
-import static java.time.Instant.now;
-import static java.util.Date.from;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.okdp.spark.authc.utils.TokenUtils;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -47,13 +43,4 @@ public class AccessToken {
 
   @JsonProperty("id_token")
   private String idToken;
-
-  public PersistedToken toPersistedToken() {
-    return PersistedToken.builder()
-        .userInfo(TokenUtils.userInfo(accessToken))
-        .refreshToken(refreshToken)
-        .expiresIn(expiresIn)
-        .expiresAt(from(now().plusSeconds(expiresIn)))
-        .build();
-  }
 }

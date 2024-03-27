@@ -16,8 +16,8 @@
 
 package io.okdp.spark.authc.provider;
 
-import io.okdp.spark.authc.model.AccessToken;
 import io.okdp.spark.authc.model.AuthState;
+import io.okdp.spark.authc.model.PersistedToken;
 
 /** Each concrete token store should implement this interface */
 public interface SessionStore {
@@ -25,10 +25,10 @@ public interface SessionStore {
   /**
    * Save the access token in a {@link T}
    *
-   * @param accessToken the access token response from the oidc provider
+   * @param PersistedToken the persisted token issued from the response from the oidc provider
    * @return {@link T} containing the saved access token
    */
-  <T> T save(AccessToken accessToken);
+  <T> T save(PersistedToken PersistedToken);
 
   /**
    * Save the PKCE state in a {@link T}
