@@ -24,6 +24,7 @@ import io.okdp.spark.authc.model.AccessToken;
 import io.okdp.spark.authc.model.PersistedToken;
 import io.okdp.spark.authc.model.UserInfo;
 import io.okdp.spark.authc.provider.SessionStore;
+import io.okdp.spark.authc.provider.impl.EmailIdentityProvider;
 import io.okdp.spark.authc.provider.impl.store.CookieSessionStore;
 import io.okdp.spark.authc.utils.TokenUtils;
 import java.io.IOException;
@@ -59,19 +60,21 @@ public class CookieFactoryStoreTest {
   @Test
   public void should_convert_access_token_into_persisted_token() throws IOException {
     String expected =
-        "{\n"
-            + "  \"access_token_payload\": {\n"
-            + "    \"name\": \"bill\",\n"
-            + "    \"email\": \"bill@example.org\",\n"
-            + "    \"groups\": [\n"
-            + "      \"admins\"\n"
-            + "    ],\n"
-            + "    \"roles\": []\n"
-            + "  },\n"
-            + "  \"expires_in\": 86399,\n"
-            + "  \"expires_at\":\"2024-02-22T10:11:11.123Z\",\n"
-            + "  \"refresh_token\":"
-            + " \"ChlvaWJmNXBuaG1rdWN0enppaGltaWp1MnJkEhlndmdzZ2tmcnVhd2x6cGV1a2ZnajNqdjJr\"\n"
+        "{"
+            + "\"identity_provider\":{\"type\":\"email\"},"
+            + "\"access_token_payload\":{"
+            + "\"sub\":\"CgRiaWxsEgRsZGFw\","
+            + "\"name\":\"bill\","
+            + "\"email\":\"bill@example.org\","
+            + "\"groups\":["
+            + "\"admins\""
+            + "],"
+            + "\"roles\":[]"
+            + "},"
+            + "\"expires_in\":86399,"
+            + "\"expires_at\":\"2024-02-22T10:11:11.123Z\","
+            + "\"refresh_token\":"
+            + "\"ChlvaWJmNXBuaG1rdWN0enppaGltaWp1MnJkEhlndmdzZ2tmcnVhd2x6cGV1a2ZnajNqdjJr\""
             + "}";
     // Given
     String accessToken =
@@ -90,11 +93,11 @@ public class CookieFactoryStoreTest {
             .refreshToken(refreshToken)
             .expiresIn(expires_in)
             .expiresAt(Date.from(Instant.parse("2024-02-21T10:11:12.123Z").plusSeconds(expires_in)))
+            .identityProvider(new EmailIdentityProvider())
             .build();
 
     // Then
-    assertThat(persistedToken)
-        .isEqualTo(new ObjectMapper().readValue(expected, PersistedToken.class));
+    assertThat(persistedToken.toJson()).isEqualTo(expected);
     assertThat(persistedToken.isExpired()).isTrue();
   }
 
@@ -108,7 +111,17 @@ public class CookieFactoryStoreTest {
             cookieName, cookieDomain, true, "E132A72E815F496FFC49B3EC876754F4", 60);
 
     // When
-    Cookie cookie = sessionStore.save(accessToken);
+    PersistedToken originalPersistedToken =
+        PersistedToken.builder()
+            .userInfo(TokenUtils.userInfo(accessToken.accessToken()))
+            .refreshToken(accessToken.refreshToken())
+            .expiresIn(accessToken.expiresIn())
+            .expiresAt(
+                Date.from(
+                    Instant.parse("2024-02-21T10:11:12.123Z").plusSeconds(accessToken.expiresIn())))
+            .identityProvider(new EmailIdentityProvider())
+            .build();
+    Cookie cookie = sessionStore.save(originalPersistedToken);
     PersistedToken persistedToken = sessionStore.readToken(cookie.getValue());
 
     // Then
@@ -121,7 +134,8 @@ public class CookieFactoryStoreTest {
     assertThat(persistedToken.refreshToken()).isEqualTo(accessToken.refreshToken());
     assertThat(persistedToken.expiresIn()).isEqualTo(accessToken.expiresIn());
     assertThat(persistedToken.expiresAt())
-        .isAfter(Instant.now().plusSeconds(accessToken.expiresIn() - 1));
+        .isAfter(
+            Instant.parse("2024-02-21T10:11:12.123Z").plusSeconds(accessToken.expiresIn() - 1));
     assertThat(persistedToken.userInfo()).isEqualTo(TokenUtils.userInfo(accessToken.accessToken()));
   }
 }

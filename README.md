@@ -92,6 +92,7 @@ The filter relies on the spark [spark.ui.filters](https://spark.apache.org/docs/
 | `cookie-max-age-minutes`   | `AUTH_COOKE_MAX_AGE_MINUTES`  | 12 * 60 | The maximum spark-cookie cookie duration in minutes                                                                                                                                                                                                            |
 | `cookie-cipher-secret-key` | `AUTH_COOKIE_ENCRYPTION_KEY`  |    -    | Cookie encryption key</br> Can be generated using: `openssl enc -aes-128-cbc -k <PASS PHRASE> -P -md sha1 -pbkdf2`                                                                                                                                             |
 | `cookie-is-secure`         | `AUTH_COOKE_IS_SECURE`        |  true   | When enabled, the cookie is transmitted over a secure connection only (HTTPS).</br> Disable the option if your run with a non secure connection (HTTP)                                                                                                         |
+| `user-id`         | `AUTH_USER_ID`        |  email   | * `email`: set the id seen by spark acls as the email filled in the access token. </br> * `sub`: set the id seen by spark acls as the sub filled in the access token.                                                                                                          |
 
 > [!NOTE]
 > 1. `issuer-uri` property or `AUTH_ISSUER_URI` env variable
@@ -166,6 +167,7 @@ spark.io.okdp.spark.authc.OidcAuthFilter.param.scope=<scope>
 spark.io.okdp.spark.authc.OidcAuthFilter.param.cookie-max-age-minutes=480
 spark.io.okdp.spark.authc.OidcAuthFilter.param.cookie-cipher-secret-key=<cookie-cipher-secret-key>
 spark.io.okdp.spark.authc.OidcAuthFilter.param.cookie-is-secure=<true|false>
+spark.io.okdp.spark.authc.OidcAuthFilter.param.user-id=<sub|email>
 ```
 
 Or during the job submission like the following:
@@ -180,6 +182,7 @@ spark-submit  --conf spark.ui.filters=io.okdp.spark.authc.OidcAuthFilter \
 --conf spark.io.okdp.spark.authc.OidcAuthFilter.param.cookie-max-age-minutes=480    \
 --conf spark.io.okdp.spark.authc.OidcAuthFilter.param.cookie-cipher-secret-key=<cookie-cipher-secret-key> \
 --conf spark.io.okdp.spark.authc.OidcAuthFilter.param.cookie-is-secure=<true|false>  \
+--conf spark.io.okdp.spark.authc.OidcAuthFilter.param.user-id=<sub|email>  \
 --class ...
 ```
 

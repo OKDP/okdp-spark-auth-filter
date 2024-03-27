@@ -17,9 +17,11 @@
 package io.okdp.spark.authc;
 
 import static java.lang.String.format;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static scala.collection.JavaConverters.asScalaSet;
 
@@ -99,6 +101,7 @@ public class OidcAuthFilterTest implements Constants, CommonTest {
       when(filterConfig.getInitParameter(AUTH_COOKIE_ENCRYPTION_KEY))
           .thenReturn(cookieEncryptionKey);
       when(filterConfig.getInitParameter(AUTH_USE_PKCE)).thenReturn("false");
+      when(filterConfig.getInitParameter(AUTH_USER_ID)).thenReturn("email");
       oidcAuthFilter.init(filterConfig);
     }
 

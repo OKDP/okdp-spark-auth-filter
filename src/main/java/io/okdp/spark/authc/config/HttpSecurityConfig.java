@@ -16,12 +16,17 @@
 
 package io.okdp.spark.authc.config;
 
+import static java.time.Instant.now;
 import static java.util.Arrays.stream;
+import static java.util.Date.from;
 
+import io.okdp.spark.authc.model.AccessToken;
+import io.okdp.spark.authc.model.PersistedToken;
 import io.okdp.spark.authc.provider.AuthProvider;
 import io.okdp.spark.authc.provider.SessionStore;
 import io.okdp.spark.authc.provider.impl.DefaultAuthorizationCodeAuthProvider;
 import io.okdp.spark.authc.provider.impl.PKCEAuthorizationCodeAuthProvider;
+import io.okdp.spark.authc.utils.TokenUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -60,6 +65,16 @@ public class HttpSecurityConfig {
   public HttpSecurityConfig sessionStore(SessionStore sessionStore) {
     this.sessionStore = sessionStore;
     return this;
+  }
+
+  public PersistedToken toPersistedToken(AccessToken token) {
+    return PersistedToken.builder()
+        .userInfo(TokenUtils.userInfo(token.accessToken()))
+        .refreshToken(token.refreshToken())
+        .expiresIn(token.expiresIn())
+        .expiresAt(from(now().plusSeconds(token.expiresIn())))
+        .identityProvider(oidcConfig().identityProvider())
+        .build();
   }
 
   /** Configure the auth provider */

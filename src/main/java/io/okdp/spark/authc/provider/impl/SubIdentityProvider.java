@@ -14,25 +14,17 @@
  *    limitations under the License.
  */
 
-package io.okdp.spark.authc.config;
+package io.okdp.spark.authc.provider.impl;
 
-import io.okdp.spark.authc.model.WellKnownConfiguration;
+import io.okdp.spark.authc.model.UserInfo;
 import io.okdp.spark.authc.provider.IdentityProvider;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.experimental.Accessors;
+import lombok.NoArgsConstructor;
 
-@Builder
-@Getter
-@Accessors(fluent = true)
-public class OidcConfig {
-  private String issuerUri;
-  private String clientId;
-  private String clientSecret;
-  private String redirectUri;
-  private String responseType;
-  private String scope;
-  private WellKnownConfiguration wellKnownConfiguration;
-  private String usePKCE;
-  private IdentityProvider identityProvider;
+@NoArgsConstructor
+public class SubIdentityProvider implements IdentityProvider {
+
+  @Override
+  public String extractId(UserInfo userInfo) {
+    return userInfo.sub();
+  }
 }

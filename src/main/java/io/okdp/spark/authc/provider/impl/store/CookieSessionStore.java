@@ -59,14 +59,14 @@ public class CookieSessionStore implements SessionStore {
    */
   @Override
   @SuppressWarnings("unchecked")
-  public Cookie save(AccessToken accessToken) {
+  public Cookie save(PersistedToken persistedToken) {
     // Reduce the token size by saving the token payload part only (user info)
     // Compress the access token to overcome 4KB cookie limit (depends on the OIDC providers and
     // their config)
     // Encrypt the content to prevent token corruption
     String cookieValue =
-        ofNullable(accessToken)
-            .map(token -> accessToken.toPersistedToken().toJson())
+        ofNullable(persistedToken)
+            .map(token -> persistedToken.toJson())
             .map(tokenAsJson -> encryptToString(compressToString(tokenAsJson), encryptionKey))
             .orElse("");
 
@@ -114,6 +114,7 @@ public class CookieSessionStore implements SessionStore {
    * @return {@link PersistedToken} containing the access token
    */
   @Override
+  @SuppressWarnings("unchecked")
   public PersistedToken readToken(String value) {
     return JsonUtils.loadJsonFromString(
         CompressionUtils.decompress(EncryptionUtils.decrypt(value, encryptionKey)),
@@ -127,6 +128,7 @@ public class CookieSessionStore implements SessionStore {
    * @return {@link AuthState} containing the PKCE state
    */
   @Override
+  @SuppressWarnings("unchecked")
   public AuthState readPKCEState(String value) {
     return JsonUtils.loadJsonFromString(
         EncryptionUtils.decrypt(value, encryptionKey), AuthState.class);

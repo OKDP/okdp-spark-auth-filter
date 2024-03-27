@@ -28,4 +28,11 @@ public class TokenUtils implements Constants {
     return JsonUtils.loadJsonFromString(
         new String(BASE64_DECODER.decode(parts[1])), UserInfo.class);
   }
+
+  /** Upper case for first letter and lower case fo remaining letter */
+  public static String capitalize(String str) {
+    if (str == null) return str;
+    if (str.length() <= 1) return str.toUpperCase();
+    return str.substring(0, 1).toUpperCase() + str.substring(1).toLowerCase();
+  }
 }
