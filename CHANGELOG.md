@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.1.0...v1.2.0) (2024-04-11)
+
+
+### Features
+
+* Add support for Sub claim (default claim is email). Sub or email could be used as id for acls ([2d1283d](https://github.com/OKDP/okdp-spark-auth-filter/commit/2d1283dbf5416c3b73ee220ea317117e2d807c7d))
+
 ## [1.1.0](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.0.0...v1.1.0) (2024-03-18)
 
 
