@@ -20,8 +20,8 @@ import static io.okdp.spark.authc.utils.HttpAuthenticationUtils.domain;
 import static io.okdp.spark.authc.utils.HttpAuthenticationUtils.sendError;
 import static io.okdp.spark.authc.utils.PreconditionsUtils.assertCookieSecure;
 import static io.okdp.spark.authc.utils.PreconditionsUtils.assertSupportePKCE;
-import static io.okdp.spark.authc.utils.PreconditionsUtils.assertSupportedScopes;
 import static io.okdp.spark.authc.utils.PreconditionsUtils.checkAuthLogin;
+import static io.okdp.spark.authc.utils.PreconditionsUtils.warnUnsupportedScopes;
 import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
 
@@ -156,7 +156,7 @@ public class OidcAuthFilter implements Filter, Constants {
         oidcConfig.wellKnownConfiguration().scopesSupported(),
         oidcConfig.wellKnownConfiguration().supportedPKCECodeChallengeMethods());
 
-    assertSupportedScopes(
+    warnUnsupportedScopes(
         oidcConfig.wellKnownConfiguration().scopesSupported(),
         scope,
         format("%s|env: %s", AUTH_SCOPE, "AUTH_SCOPE"));

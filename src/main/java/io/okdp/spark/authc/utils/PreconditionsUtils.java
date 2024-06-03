@@ -28,8 +28,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import javax.servlet.ServletRequest;
+import lombok.extern.slf4j.Slf4j;
 
 /** Preconditions check utility methods */
+@Slf4j
 public class PreconditionsUtils {
 
   /** Ensures the given string is not null. */
@@ -55,17 +57,18 @@ public class PreconditionsUtils {
    * @param supported
    * @param provided
    */
-  public static void assertSupportedScopes(List<String> supported, String provided, String label) {
+  public static void warnUnsupportedScopes(List<String> supported, String provided, String label) {
     List<String> unsupported =
         Arrays.stream(provided.split("\\+"))
             .filter(element -> !supported.contains(element))
             .collect(toList());
-    checkArgument(
-        unsupported.isEmpty(),
-        format(
-            "The parameter '%s' contains an unsupported scopes '%s' by your oidc provider.\n"
-                + "The supported scopes are: %s",
-            label, unsupported, supported));
+    if (!unsupported.isEmpty()) {
+      log.warn(
+          "The parameter '{}' contains an unsupported scopes '{}' by your oidc provider. The supported scopes are: {}",
+          label,
+          unsupported,
+          supported);
+    }
   }
 
   /** The OIDC provider should support PKCE for public clients */
