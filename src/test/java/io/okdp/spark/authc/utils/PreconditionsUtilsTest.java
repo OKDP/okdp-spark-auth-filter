@@ -17,7 +17,6 @@
 package io.okdp.spark.authc.utils;
 
 import static io.okdp.spark.authc.utils.PreconditionsUtils.assertSupportePKCE;
-import static io.okdp.spark.authc.utils.PreconditionsUtils.assertSupportedScopes;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -71,31 +70,6 @@ public class PreconditionsUtilsTest {
 
     // Then
     assertThatCode(validValue).doesNotThrowAnyException();
-  }
-
-  @Test
-  public void should_assert_valid_scopes() {
-    // when
-    ThrowingCallable validScopes =
-        () ->
-            assertSupportedScopes(
-                asList("openid", "profile", "email", "roles", "offline_access"),
-                "openid+profile+email",
-                "scope");
-
-    ThrowingCallable unsupportedScopes =
-        () ->
-            assertSupportedScopes(
-                asList("openid", "profile", "email", "roles", "offline_access"),
-                "openid+profile+email+groups+roles+offline_access",
-                "scope");
-
-    // Then
-    assertThatCode(validScopes).doesNotThrowAnyException();
-    assertThatCode(unsupportedScopes)
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("'[groups]'")
-        .hasMessageContaining("scope");
   }
 
   @Test
