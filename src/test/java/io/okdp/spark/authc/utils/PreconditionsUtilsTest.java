@@ -22,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.ThrowableAssert.catchThrowable;
 
+import io.okdp.spark.authc.exception.AuthenticationException;
 import java.util.List;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.jupiter.api.Test;
@@ -51,13 +52,15 @@ public class PreconditionsUtilsTest {
 
     // Then
     assertThat(emptyValue)
-        .isInstanceOf(NullPointerException.class)
+        .isInstanceOf(AuthenticationException.class)
         .hasMessageContaining("label_01");
 
-    assertThat(nullValue).isInstanceOf(NullPointerException.class).hasMessageContaining("label_01");
+    assertThat(nullValue)
+        .isInstanceOf(AuthenticationException.class)
+        .hasMessageContaining("label_01");
 
     assertThat(spacesValue)
-        .isInstanceOf(NullPointerException.class)
+        .isInstanceOf(AuthenticationException.class)
         .hasMessageContaining("label_01");
   }
 

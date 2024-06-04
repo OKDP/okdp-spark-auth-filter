@@ -206,22 +206,33 @@ public class OidcAuthFilter implements Filter, Constants {
           authProvider.httpSecurityConfig().sessionStore().readToken(maybeAuthCookie.get());
 
       if (persistedToken.isExpired()) {
-        log.info("The user {} token was expired, renewing ... ", persistedToken.userInfo().email());
-        // Handle scenarios where offline_access is disabled, oidc provider logout or expired the
-        // session/tokens, user logged in with another identifier, etc.
-        // Note that, even the oidc provider had expired the token, it remains valid in the cookie
-        // until it expire there.
-        // So, in case we cannot renew the token, we set the cookie value as empty and let the
-        // current request passes
-        // The subsequent requests will require a user authentication from the oidc provider
-        AccessToken accessToken =
-            Try.of(() -> authProvider.refreshToken(persistedToken.refreshToken()))
-                .onException(
-                    e ->
-                        log.info(
-                            "Unable to renew access token from refresh token, removing cookie and retrying ....., cause: {}",
-                            e.getMessage()));
-        PersistedToken pToken = authProvider.httpSecurityConfig().toPersistedToken(accessToken);
+        AccessToken newAccessToken = null;
+        if (persistedToken.hasRefreshToken()) {
+          log.info(
+              "The user {} token was expired, renewing ... ", persistedToken.userInfo().email());
+          // Handle scenarios where offline_access is disabled, oidc provider logout or expired the
+          // session/tokens, user logged in with another identifier, etc.
+          // Note that, even the oidc provider had expired the token, it remains valid in the cookie
+          // until it expire there.
+          // So, in case we cannot renew the token, we set the cookie value as empty and let the
+          // current request passes
+          // The subsequent requests will require a user re-authentication from the oidc provider
+          newAccessToken =
+              Try.of(() -> authProvider.refreshToken(persistedToken.refreshToken()))
+                  .onException(
+                      e ->
+                          log.warn(
+                              "Unable to renew access token from refresh token, removing cookie and attempt to re-authenticate ....., cause: {}",
+                              e.getMessage()));
+        } else {
+          log.info(
+              "The user {} token was expired, removing cookie and attempt to re-authenticate ... ",
+              persistedToken.userInfo().email());
+        }
+        PersistedToken pToken =
+            ofNullable(newAccessToken)
+                .map(token -> authProvider.httpSecurityConfig().toPersistedToken(token))
+                .orElse(null);
         Cookie cookie = authProvider.httpSecurityConfig().sessionStore().save(pToken);
         ((HttpServletResponse) servletResponse).addCookie(cookie);
       }

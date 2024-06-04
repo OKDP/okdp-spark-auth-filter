@@ -16,6 +16,8 @@
 
 package io.okdp.spark.authc.model;
 
+import static org.apache.logging.log4j.util.Strings.isNotBlank;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -57,6 +59,11 @@ public class PersistedToken {
   @JsonIgnore
   public boolean isExpired() {
     return Instant.now().isAfter(expiresAt.toInstant());
+  }
+
+  @JsonIgnore
+  public boolean hasRefreshToken() {
+    return isNotBlank(refreshToken);
   }
 
   /** Convert this object to json */

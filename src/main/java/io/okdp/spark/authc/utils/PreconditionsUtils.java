@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Optional;
 import javax.servlet.ServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.hc.core5.http.HttpStatus;
 
 /** Preconditions check utility methods */
 @Slf4j
@@ -37,7 +38,8 @@ public class PreconditionsUtils {
   /** Ensures the given string is not null. */
   public static String checkNotNull(String str, String label) {
     if (Strings.nullToEmpty(str).trim().isEmpty()) {
-      throw new NullPointerException(
+      throw new AuthenticationException(
+          HttpStatus.SC_BAD_REQUEST,
           format("The parameter <%s> should not be null or blank", label));
     } else {
       return str;
