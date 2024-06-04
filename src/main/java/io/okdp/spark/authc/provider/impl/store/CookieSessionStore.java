@@ -54,7 +54,7 @@ public class CookieSessionStore implements SessionStore {
    *
    * <p>If the provided {@link AccessToken} is null, save an empty value in a cookie.
    *
-   * @param accessToken the access token response from the oidc provider
+   * @param persistedToken the persisted access token response from the oidc provider
    * @return {@link Cookie} containing the compressed and encrypted access token
    */
   @Override
