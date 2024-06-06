@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.1](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.2.0...v1.2.1) (2024-06-06)
+
+
+### Bug Fixes
+
+* IDP supported scopes - Turn the exception into a warning message [#16](https://github.com/OKDP/okdp-spark-auth-filter/issues/16) ([e18881c](https://github.com/OKDP/okdp-spark-auth-filter/commit/e18881c822b0bf779c0a275e46ed1f2365c017a7))
+* Re-authenticate the user against the IDP in case the offline_access is not supported [#16](https://github.com/OKDP/okdp-spark-auth-filter/issues/16) ([c7fc9f4](https://github.com/OKDP/okdp-spark-auth-filter/commit/c7fc9f4ff19cfbf81139ba265d253f212df2a9b0))
+
+
+### Miscellaneous Chores
+
+* release 1.2.1 ([c68e57c](https://github.com/OKDP/okdp-spark-auth-filter/commit/c68e57cb750a1ef4bb7c2793198bb908871dda17))
+
 ## [1.2.0](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.1.0...v1.2.0) (2024-04-11)
 
 
