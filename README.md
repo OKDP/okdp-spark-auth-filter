@@ -38,7 +38,7 @@ Please, check the [latest release note](https://github.com/OKDP/okdp-spark-auth-
 1. Using Docker
 
 ```shell
-ADD https://repo1.maven.org/maven2/io/okdp/okdp-spark-auth-filter/1.2.0/okdp-spark-auth-filter-1.2.0.jar ${SPARK_HOME}/jars
+ADD https://repo1.maven.org/maven2/io/okdp/okdp-spark-auth-filter/1.2.1/okdp-spark-auth-filter-1.2.1.jar ${SPARK_HOME}/jars
 ```
 
 2. Using Maven
@@ -47,13 +47,13 @@ ADD https://repo1.maven.org/maven2/io/okdp/okdp-spark-auth-filter/1.2.0/okdp-spa
 <dependency>
   <groupId>io.okdp</groupId>
   <artifactId>okdp-spark-auth-filter</artifactId>
-  <version>1.2.0</version>
+  <version>1.2.1</version>
 </dependency>
 ```
 
 3. Spark on Yarn/Standalone mode
 
-Copy the jar https://repo1.maven.org/maven2/io/okdp/okdp-spark-auth-filter/1.2.0/okdp-spark-auth-filter-1.2.0.jar into `${SPARK_HOME}/jars/` in the different spark nodes
+Copy the jar https://repo1.maven.org/maven2/io/okdp/okdp-spark-auth-filter/1.2.1/okdp-spark-auth-filter-1.2.1.jar into `${SPARK_HOME}/jars/` in the different spark nodes
 
 # Configuration
 
