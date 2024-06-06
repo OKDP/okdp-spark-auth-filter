@@ -66,7 +66,7 @@ public class PreconditionsUtils {
             .collect(toList());
     if (!unsupported.isEmpty()) {
       log.warn(
-          "The parameter '{}' contains an unsupported scopes '{}' by your oidc provider. The supported scopes are: {}",
+          "The parameter may '{}' contain an unsupported scopes '{}' by your oidc provider. The supported scopes are: {}",
           label,
           unsupported,
           supported);
