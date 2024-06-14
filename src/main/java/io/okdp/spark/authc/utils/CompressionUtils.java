@@ -16,7 +16,6 @@
 
 package io.okdp.spark.authc.utils;
 
-import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import io.okdp.spark.authc.config.Constants;
@@ -37,9 +36,9 @@ public class CompressionUtils implements Constants {
     try {
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       GZIPOutputStream gzip = new GZIPOutputStream(out);
-      gzip.write(text.getBytes());
+      gzip.write(text.getBytes(UTF_8));
       gzip.close();
-      return BASE64_ENCODER.encodeToString(out.toString(ISO_8859_1).getBytes(UTF_8));
+      return BASE64_ENCODER.encodeToString(out.toByteArray());
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -51,16 +50,10 @@ public class CompressionUtils implements Constants {
    */
   public static String decompress(String base64Compressed) {
     try {
-      String decoded = new String(BASE64_DECODER.decode(base64Compressed.getBytes(UTF_8)));
-      ByteArrayOutputStream out = new ByteArrayOutputStream();
-      ByteArrayInputStream in = new ByteArrayInputStream(decoded.getBytes(ISO_8859_1));
+      byte[] decoded = BASE64_DECODER.decode(base64Compressed.getBytes(UTF_8));
+      ByteArrayInputStream in = new ByteArrayInputStream(decoded);
       GZIPInputStream gunzip = new GZIPInputStream(in);
-      byte[] buffer = new byte[256];
-      int n;
-      while ((n = gunzip.read(buffer)) >= 0) {
-        out.write(buffer, 0, n);
-      }
-      return out.toString(ISO_8859_1);
+      return new String(gunzip.readAllBytes(), UTF_8);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
