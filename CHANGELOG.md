@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.2](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.2.1...v1.2.2) (2024-07-01)
+
+
+### Bug Fixes
+
+* Fix Base64 Encoding/Decoding issue happening on some jdk distributions (bitnami) [#24](https://github.com/OKDP/okdp-spark-auth-filter/issues/24) ([fac895c](https://github.com/OKDP/okdp-spark-auth-filter/commit/fac895ca78b65b5790ceb2257632836acc19432f))
+* Fix serving behind reverse proxy [#26](https://github.com/OKDP/okdp-spark-auth-filter/issues/26) ([053f0b0](https://github.com/OKDP/okdp-spark-auth-filter/commit/053f0b0f2c301320e6889a83a053766a94f95a89))
+
+
+### Miscellaneous Chores
+
+* release 1.2.2 ([3605c5a](https://github.com/OKDP/okdp-spark-auth-filter/commit/3605c5a8ef18923e8dcf0c6e63d6c6eb65f697a4))
+
 ## [1.2.1](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.2.0...v1.2.1) (2024-06-06)
 
 
