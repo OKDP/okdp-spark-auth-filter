@@ -294,7 +294,10 @@ public class OidcAuthFilter implements Filter, Constants {
       // remove the authz 'code' from the browser)
       servletResponse
           .getWriter()
-          .print("<script type=\"text/javascript\">window.location.href = '/home'</script>");
+          .print(
+              String.format(
+                  "<script type=\"text/javascript\">window.location.href = '%s'</script>",
+                  ((HttpServletRequest) servletRequest).getRequestURI()));
     }
   }
 
