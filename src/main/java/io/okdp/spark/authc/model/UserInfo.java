@@ -74,12 +74,14 @@ public class UserInfo {
     }
     try {
       List<Object> value = claim.getListClaim("groups");
-      if (value != null) user.groups = value.stream().map(v -> (String) v).toList();
+      if (value != null)
+        user.groups = value.stream().map(v -> (String) v).collect(Collectors.toList());
     } catch (ParseException | ClassCastException e) {
     }
     try {
       List<Object> value = claim.getListClaim("roles");
-      if (value != null) user.roles = value.stream().map(v -> (String) v).toList();
+      if (value != null)
+        user.roles = value.stream().map(v -> (String) v).collect(Collectors.toList());
     } catch (ParseException | ClassCastException e) {
     }
     return user;

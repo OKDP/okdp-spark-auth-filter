@@ -64,6 +64,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -227,10 +228,9 @@ public class OidcAuthFilter implements Filter, Constants {
       // Define the signing algorithm supported for verifying the token
       // We retrieve this information from the well known configuration
       Set<JWSAlgorithm> expectedJWSAlg =
-          new HashSet<JWSAlgorithm>(
-              oidcConfig.wellKnownConfiguration().idTokenSigningAlgValuesSupported().stream()
-                  .map(JWSAlgorithm::parse)
-                  .toList());
+          oidcConfig.wellKnownConfiguration().idTokenSigningAlgValuesSupported().stream()
+              .map(JWSAlgorithm::parse)
+              .collect(Collectors.toSet());
 
       JWSKeySelector<SecurityContext> keySelector =
           new JWSVerificationKeySelector<>(expectedJWSAlg, keySource);
