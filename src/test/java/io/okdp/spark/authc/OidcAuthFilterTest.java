@@ -102,7 +102,12 @@ public class OidcAuthFilterTest implements Constants, CommonTest {
           .thenReturn(cookieEncryptionKey);
       when(filterConfig.getInitParameter(AUTH_USE_PKCE)).thenReturn("false");
       when(filterConfig.getInitParameter(AUTH_USER_ID)).thenReturn("email");
-      oidcAuthFilter.init(filterConfig);
+      try {
+        oidcAuthFilter.init(filterConfig);
+      } catch (ServletException e) {
+        e.printStackTrace();
+      }
+      ;
     }
 
     Field field = oidcAuthFilter.getClass().getDeclaredField("authProvider");
