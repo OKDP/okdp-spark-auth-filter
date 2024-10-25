@@ -66,6 +66,9 @@ public interface Constants {
   /** The user id wich will be extracted from the access token (EMAIL|SUB) */
   String AUTH_USER_ID = "user-id";
 
+  /** The cookie name from where the JWT token will be extracted */
+  String JWT_HEADER = "jwt-header";
+
   /** The cookie encryption key parameter name */
   String AUTH_COOKIE_ENCRYPTION_KEY = "cookie-cipher-secret-key";
 

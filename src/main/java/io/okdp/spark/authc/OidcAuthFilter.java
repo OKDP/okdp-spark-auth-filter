@@ -25,6 +25,21 @@ import static io.okdp.spark.authc.utils.PreconditionsUtils.warnUnsupportedScopes
 import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
 
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.JOSEObjectType;
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.jwk.source.JWKSource;
+import com.nimbusds.jose.jwk.source.JWKSourceBuilder;
+import com.nimbusds.jose.proc.BadJOSEException;
+import com.nimbusds.jose.proc.DefaultJOSEObjectTypeVerifier;
+import com.nimbusds.jose.proc.JWSKeySelector;
+import com.nimbusds.jose.proc.JWSVerificationKeySelector;
+import com.nimbusds.jose.proc.SecurityContext;
+import com.nimbusds.jwt.JWTClaimNames;
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
+import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier;
+import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 import io.okdp.spark.authc.config.Constants;
 import io.okdp.spark.authc.config.HttpSecurityConfig;
 import io.okdp.spark.authc.config.OidcConfig;
@@ -42,7 +57,13 @@ import io.okdp.spark.authc.utils.TokenUtils;
 import io.okdp.spark.authc.utils.exception.Try;
 import io.okdp.spark.authz.OidcGroupMappingServiceProvider;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.text.ParseException;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -59,9 +80,11 @@ import org.apache.hc.core5.http.HttpStatus;
 public class OidcAuthFilter implements Filter, Constants {
 
   private AuthProvider authProvider;
+  private ConfigurableJWTProcessor<SecurityContext> jwtProcessor = new DefaultJWTProcessor<>();
+  private String jwtHeader;
 
   @Override
-  public void init(FilterConfig filterConfig) {
+  public void init(FilterConfig filterConfig) throws ServletException {
     String issuerUri =
         PreconditionsUtils.checkNotNull(
             ofNullable(filterConfig.getInitParameter(AUTH_ISSUER_URI))
@@ -108,6 +131,9 @@ public class OidcAuthFilter implements Filter, Constants {
     String idProvider =
         ofNullable(filterConfig.getInitParameter(AUTH_USER_ID))
             .orElse(ofNullable(System.getenv("AUTH_USER_ID")).orElse("Email"));
+    jwtHeader =
+        ofNullable(filterConfig.getInitParameter(JWT_HEADER))
+            .orElse(ofNullable(System.getenv("JWT_HEADER")).orElse("jwt_token"));
 
     log.info(
         "Initializing OIDC Auth filter ({}: <{}>,  {}: <{}>) ...",
@@ -149,12 +175,14 @@ public class OidcAuthFilter implements Filter, Constants {
             + "Token Endpoint: {}, \n"
             + "User Info Endpoint: {}, \n"
             + "Supported Scopes: {}, \n"
-            + "PKCE Supported Code Challenge Methods: {}, \n",
+            + "PKCE Supported Code Challenge Methods: {}, \n"
+            + "JWKS URI: {}, \n",
         oidcConfig.wellKnownConfiguration().authorizationEndpoint(),
         oidcConfig.wellKnownConfiguration().tokenEndpoint(),
         oidcConfig.wellKnownConfiguration().userInfoEndpoint(),
         oidcConfig.wellKnownConfiguration().scopesSupported(),
-        oidcConfig.wellKnownConfiguration().supportedPKCECodeChallengeMethods());
+        oidcConfig.wellKnownConfiguration().supportedPKCECodeChallengeMethods(),
+        oidcConfig.wellKnownConfiguration().jwksUri());
 
     warnUnsupportedScopes(
         oidcConfig.wellKnownConfiguration().scopesSupported(),
@@ -186,6 +214,43 @@ public class OidcAuthFilter implements Filter, Constants {
                     encryptionKey,
                     cookieMaxAgeMinutes * 60))
             .configure();
+    try {
+      // Define the token's type allowed
+      jwtProcessor.setJWSTypeVerifier(
+          new DefaultJOSEObjectTypeVerifier<>(
+              new JOSEObjectType("jwt"), new JOSEObjectType("at+jwt")));
+      // Retrieve the JWKS needed to verify the token
+      JWKSource<SecurityContext> keySource =
+          JWKSourceBuilder.create(new URL(oidcConfig.wellKnownConfiguration().jwksUri()))
+              .retrying(true)
+              .build();
+      // Define the signing algorithm supported for verifying the token
+      // We retrieve this information from the well known configuration
+      Set<JWSAlgorithm> expectedJWSAlg =
+          new HashSet<JWSAlgorithm>(
+              oidcConfig.wellKnownConfiguration().idTokenSigningAlgValuesSupported().stream()
+                  .map(JWSAlgorithm::parse)
+                  .toList());
+
+      JWSKeySelector<SecurityContext> keySelector =
+          new JWSVerificationKeySelector<>(expectedJWSAlg, keySource);
+      jwtProcessor.setJWSKeySelector(keySelector);
+
+      // Set the required JWT claims for tokens
+      jwtProcessor.setJWTClaimsSetVerifier(
+          new DefaultJWTClaimsVerifier<>(
+              new JWTClaimsSet.Builder()
+                  .issuer(oidcConfig.wellKnownConfiguration().issuer())
+                  .build(),
+              new HashSet<>(
+                  Arrays.asList(
+                      JWTClaimNames.SUBJECT,
+                      JWTClaimNames.ISSUED_AT,
+                      JWTClaimNames.EXPIRATION_TIME,
+                      JWTClaimNames.JWT_ID))));
+    } catch (MalformedURLException e) {
+      throw new ServletException(e);
+    }
   }
 
   @Override
@@ -244,6 +309,33 @@ public class OidcAuthFilter implements Filter, Constants {
               (HttpServletRequest) servletRequest, persistedToken.id()),
           servletResponse);
       return;
+    }
+
+    ((HttpServletRequest) servletRequest).getHeader(jwtHeader);
+    Optional<String> maybeJWTHeader =
+        HttpAuthenticationUtils.getCookieValue(jwtHeader, servletRequest);
+    if (maybeJWTHeader.isPresent()) {
+      JWTClaimsSet claimsSet;
+
+      try {
+        claimsSet = jwtProcessor.process(maybeJWTHeader.get(), null);
+        // Add the user and groups in the user/group mappings authorization cache
+        PersistedToken persistedToken =
+            authProvider.httpSecurityConfig().toPersistedToken(claimsSet);
+        OidcGroupMappingServiceProvider.addUserAndGroups(
+            persistedToken.id(), persistedToken.userInfo().getGroupsAndRoles());
+        filterChain.doFilter(
+            new PrincipalHttpServletRequestWrapper(
+                (HttpServletRequest) servletRequest, persistedToken.id()),
+            servletResponse);
+        return;
+      } catch (ParseException | BadJOSEException e) {
+        // Invalid token
+        System.err.println(e.getMessage());
+      } catch (JOSEException e) {
+        // Key sourcing failed or another internal exception
+        System.err.println(e.getMessage());
+      }
     }
 
     // Get the oidc authorization code if the user is authenticated

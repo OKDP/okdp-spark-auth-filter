@@ -43,4 +43,13 @@ public class WellKnownConfiguration {
 
   @JsonProperty("code_challenge_methods_supported")
   private List<String> supportedPKCECodeChallengeMethods = emptyList();
+
+  @JsonProperty("jwks_uri")
+  private String jwksUri;
+
+  @JsonProperty("id_token_signing_alg_values_supported")
+  private List<String> idTokenSigningAlgValuesSupported = emptyList();
+
+  @JsonProperty("issuer")
+  private String issuer;
 }

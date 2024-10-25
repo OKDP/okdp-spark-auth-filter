@@ -20,6 +20,7 @@ import static java.time.Instant.now;
 import static java.util.Arrays.stream;
 import static java.util.Date.from;
 
+import com.nimbusds.jwt.JWTClaimsSet;
 import io.okdp.spark.authc.model.AccessToken;
 import io.okdp.spark.authc.model.PersistedToken;
 import io.okdp.spark.authc.provider.AuthProvider;
@@ -73,6 +74,15 @@ public class HttpSecurityConfig {
         .refreshToken(token.refreshToken())
         .expiresIn(token.expiresIn())
         .expiresAt(from(now().plusSeconds(token.expiresIn())))
+        .identityProvider(oidcConfig().identityProvider())
+        .build();
+  }
+
+  public PersistedToken toPersistedToken(JWTClaimsSet claimsSet) {
+    return PersistedToken.builder()
+        .userInfo(TokenUtils.userInfo(claimsSet))
+        .refreshToken(null)
+        .expiresAt(claimsSet.getExpirationTime())
         .identityProvider(oidcConfig().identityProvider())
         .build();
   }

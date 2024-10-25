@@ -49,6 +49,17 @@ public class HttpAuthenticationUtils implements Constants {
   }
 
   /**
+   * Get the first header value matching the provided headerName from the provided ServletRequest
+   *
+   * @param headerName the header name
+   * @param request the {@link ServletRequest}
+   * @return the header content if the header exists or return empty if it does not exist
+   */
+  public static Optional<String> getHeaderValue(String headerName, ServletRequest request) {
+    return ofNullable(((HttpServletRequest) request).getHeader(headerName));
+  }
+
+  /**
    * Get the cookie matching the provided cookieName from the provided ServletRequest
    *
    * @param cookieName the cookie name

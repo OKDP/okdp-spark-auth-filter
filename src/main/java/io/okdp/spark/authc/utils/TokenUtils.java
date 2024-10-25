@@ -16,6 +16,7 @@
 
 package io.okdp.spark.authc.utils;
 
+import com.nimbusds.jwt.JWTClaimsSet;
 import io.okdp.spark.authc.config.Constants;
 import io.okdp.spark.authc.model.UserInfo;
 
@@ -27,6 +28,11 @@ public class TokenUtils implements Constants {
     String[] parts = accessToken.split("\\.");
     return JsonUtils.loadJsonFromString(
         new String(BASE64_DECODER.decode(parts[1])), UserInfo.class);
+  }
+
+  /** Get oidc user info from a given JWTClaimSet */
+  public static UserInfo userInfo(JWTClaimsSet claimSet) {
+    return UserInfo.fromJWTClaim(claimSet);
   }
 
   /** Upper case for first letter and lower case fo remaining letter */

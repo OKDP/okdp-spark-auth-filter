@@ -21,6 +21,8 @@ import static java.util.Collections.emptyList;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.nimbusds.jwt.JWTClaimsSet;
+import java.text.ParseException;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -55,5 +57,31 @@ public class UserInfo {
   @JsonIgnore
   public List<String> getGroupsAndRoles() {
     return Stream.concat(groups.stream(), roles.stream()).collect(Collectors.toList());
+  }
+
+  public static UserInfo fromJWTClaim(JWTClaimsSet claim) {
+    UserInfo user = new UserInfo();
+    user.sub = claim.getSubject();
+    try {
+      user.name = claim.getStringClaim("name");
+    } catch (ParseException e) {
+      user.name = null;
+    }
+    try {
+      user.email = claim.getStringClaim("email");
+    } catch (ParseException e) {
+      user.email = null;
+    }
+    try {
+      List<Object> value = claim.getListClaim("groups");
+      if (value != null) user.groups = value.stream().map(v -> (String) v).toList();
+    } catch (ParseException | ClassCastException e) {
+    }
+    try {
+      List<Object> value = claim.getListClaim("roles");
+      if (value != null) user.roles = value.stream().map(v -> (String) v).toList();
+    } catch (ParseException | ClassCastException e) {
+    }
+    return user;
   }
 }

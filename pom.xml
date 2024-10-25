@@ -51,6 +51,7 @@
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
     <spark.version>[3.1.1,)</spark.version>
+    <nimbus-jose-jwt.version>9.41.2</nimbus-jose-jwt.version>
     <scala.version>2.12</scala.version>
     <httpclient5-fluent.version>5.3.1</httpclient5-fluent.version>
     <caffeine.version>3.1.8</caffeine.version>
@@ -90,6 +91,11 @@
         <groupId>com.github.ben-manes.caffeine</groupId>
         <artifactId>caffeine</artifactId>
         <version>${caffeine.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.nimbusds</groupId>
+        <artifactId>nimbus-jose-jwt</artifactId>
+        <version>${nimbus-jose-jwt.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.spark</groupId>
@@ -143,6 +149,11 @@
     <dependency>
       <groupId>com.github.ben-manes.caffeine</groupId>
       <artifactId>caffeine</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.nimbusds</groupId>
+      <artifactId>nimbus-jose-jwt</artifactId>
+      <version>${nimbus-jose-jwt.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
