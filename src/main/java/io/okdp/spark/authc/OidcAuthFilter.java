@@ -311,13 +311,13 @@ public class OidcAuthFilter implements Filter, Constants {
       return;
     }
 
-    ((HttpServletRequest) servletRequest).getHeader(jwtHeader);
     Optional<String> maybeJWTHeader =
         HttpAuthenticationUtils.getCookieValue(jwtHeader, servletRequest);
     if (maybeJWTHeader.isPresent()) {
       JWTClaimsSet claimsSet;
 
       try {
+        log.info("JWT Header : {}", maybeJWTHeader.get());
         claimsSet = jwtProcessor.process(maybeJWTHeader.get(), null);
         // Add the user and groups in the user/group mappings authorization cache
         PersistedToken persistedToken =
@@ -329,12 +329,12 @@ public class OidcAuthFilter implements Filter, Constants {
                 (HttpServletRequest) servletRequest, persistedToken.id()),
             servletResponse);
         return;
-      } catch (ParseException | BadJOSEException e) {
+      } catch (ParseException | JOSEException e) {
         // Invalid token
-        System.err.println(e.getMessage());
-      } catch (JOSEException e) {
+        log.error("Error Parsing JWT Token : {}", e.getMessage());
+      } catch (BadJOSEException e) {
         // Key sourcing failed or another internal exception
-        System.err.println(e.getMessage());
+        log.error("Error on JWT Token validation : {}", e.getMessage());
       }
     }
 
