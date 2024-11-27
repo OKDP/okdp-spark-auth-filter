@@ -261,7 +261,7 @@ public class OidcAuthFilter implements Filter, Constants {
       throws IOException, ServletException {
     // Skip authentication for static content (.js, .css, .png, etc)
     if (authProvider.isAuthorized(servletRequest)) {
-      
+
       filterChain.doFilter(servletRequest, servletResponse);
       return;
     }
@@ -327,7 +327,10 @@ public class OidcAuthFilter implements Filter, Constants {
             authProvider.httpSecurityConfig().toPersistedToken(claimsSet);
         OidcGroupMappingServiceProvider.addUserAndGroups(
             persistedToken.id(), persistedToken.userInfo().getGroupsAndRoles());
-        log.info("JWT Token : User {} and groups {}", persistedToken.id(), persistedToken.userInfo().getGroupsAndRoles());
+        log.info(
+            "JWT Token : User {} and groups {}",
+            persistedToken.id(),
+            persistedToken.userInfo().getGroupsAndRoles());
         filterChain.doFilter(
             new PrincipalHttpServletRequestWrapper(
                 (HttpServletRequest) servletRequest, persistedToken.id()),
