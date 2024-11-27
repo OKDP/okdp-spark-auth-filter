@@ -206,7 +206,9 @@ public class OidcAuthFilter implements Filter, Constants {
         cookieMaxAgeMinutes);
     authProvider =
         HttpSecurityConfig.create(oidcConfig)
-            .authorizeRequests(".*/.*\\.css", ".*/.*\\.js", ".*/.*\\.png")
+            // configure acces with no authetication checks all image, css and js
+            // add also access to /api/v1/version that could be used as an health check
+            .authorizeRequests(".*/.*\\.css", ".*/.*\\.js", ".*/.*\\.png", "/api/v1/version")
             .sessionStore(
                 CookieSessionStore.of(
                     AUTH_COOKE_NAME,
@@ -259,6 +261,7 @@ public class OidcAuthFilter implements Filter, Constants {
       throws IOException, ServletException {
     // Skip authentication for static content (.js, .css, .png, etc)
     if (authProvider.isAuthorized(servletRequest)) {
+      
       filterChain.doFilter(servletRequest, servletResponse);
       return;
     }
@@ -324,6 +327,7 @@ public class OidcAuthFilter implements Filter, Constants {
             authProvider.httpSecurityConfig().toPersistedToken(claimsSet);
         OidcGroupMappingServiceProvider.addUserAndGroups(
             persistedToken.id(), persistedToken.userInfo().getGroupsAndRoles());
+        log.info("JWT Token : User {} and groups {}", persistedToken.id(), persistedToken.userInfo().getGroupsAndRoles());
         filterChain.doFilter(
             new PrincipalHttpServletRequestWrapper(
                 (HttpServletRequest) servletRequest, persistedToken.id()),
@@ -336,6 +340,8 @@ public class OidcAuthFilter implements Filter, Constants {
         // Key sourcing failed or another internal exception
         log.error("Error on JWT Token validation : {}", e.getMessage());
       }
+    } else {
+      log.info("No JWT header ({}) found", jwtHeader);
     }
 
     // Get the oidc authorization code if the user is authenticated
