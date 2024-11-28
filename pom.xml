@@ -52,6 +52,7 @@
     <maven.compiler.target>11</maven.compiler.target>
     <spark.version>[3.1.1,)</spark.version>
     <nimbus-jose-jwt.version>9.41.2</nimbus-jose-jwt.version>
+    <streamex.version>0.8.3</streamex.version>
     <scala.version>2.12</scala.version>
     <httpclient5-fluent.version>5.3.1</httpclient5-fluent.version>
     <caffeine.version>3.1.8</caffeine.version>
@@ -154,6 +155,11 @@
       <groupId>com.nimbusds</groupId>
       <artifactId>nimbus-jose-jwt</artifactId>
       <version>${nimbus-jose-jwt.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>one.util</groupId>
+      <artifactId>streamex</artifactId>
+      <version>${streamex.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
