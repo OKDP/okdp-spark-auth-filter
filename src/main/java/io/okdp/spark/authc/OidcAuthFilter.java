@@ -315,7 +315,15 @@ public class OidcAuthFilter implements Filter, Constants {
     }
 
     Optional<String> maybeJWTHeader =
-        HttpAuthenticationUtils.getCookieValue(jwtHeader, servletRequest);
+        HttpAuthenticationUtils.getHeaderValue(jwtHeader, servletRequest);
+
+    if (log.isInfoEnabled()) {
+      log.info("Request Headers Dump");
+      HttpAuthenticationUtils.getHeaders(servletRequest)
+          .forEach(
+              e -> log.info("Header : {}, Values : {}", e.getKey(), e.getValue().joining(",")));
+    }
+
     if (maybeJWTHeader.isPresent()) {
       JWTClaimsSet claimsSet;
 

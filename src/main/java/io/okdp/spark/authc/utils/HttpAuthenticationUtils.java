@@ -32,6 +32,8 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import one.util.streamex.EntryStream;
+import one.util.streamex.StreamEx;
 
 /** Authentication utility methods */
 @Slf4j
@@ -57,6 +59,12 @@ public class HttpAuthenticationUtils implements Constants {
    */
   public static Optional<String> getHeaderValue(String headerName, ServletRequest request) {
     return ofNullable(((HttpServletRequest) request).getHeader(headerName));
+  }
+
+  public static EntryStream<String, StreamEx<String>> getHeaders(ServletRequest request) {
+    HttpServletRequest req = (HttpServletRequest) request;
+    return StreamEx.of(req.getHeaderNames())
+        .mapToEntry(header -> StreamEx.of(req.getHeaders(header)));
   }
 
   /**
