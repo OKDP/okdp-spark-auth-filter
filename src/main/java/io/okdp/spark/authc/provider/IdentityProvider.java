@@ -29,7 +29,8 @@ import io.okdp.spark.authc.provider.impl.SubIdentityProvider;
     defaultImpl = EmailIdentityProvider.class)
 @JsonSubTypes({
   @JsonSubTypes.Type(value = EmailIdentityProvider.class, name = "email"),
-  @JsonSubTypes.Type(value = SubIdentityProvider.class, name = "sub")
+  @JsonSubTypes.Type(value = SubIdentityProvider.class, name = "sub"),
+  @JsonSubTypes.Type(value = GoogleIdentityProvider.class, name = "google")
 })
 
 /** Each concrete Identity provider should implement this interface */
