@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.okdp.spark.authc.model.UserInfo;
 import io.okdp.spark.authc.provider.impl.EmailIdentityProvider;
+import io.okdp.spark.authc.provider.impl.GoogleIdentityProvider;
 import io.okdp.spark.authc.provider.impl.SubIdentityProvider;
 
 @JsonTypeInfo(

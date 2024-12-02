@@ -64,7 +64,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -76,7 +75,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import one.util.streamex.StreamEx;
-
 import org.apache.hc.core5.http.HttpStatus;
 
 @Slf4j
@@ -140,8 +138,8 @@ public class OidcAuthFilter implements Filter, Constants {
     String jwtHeaderSigningAlg =
         ofNullable(filterConfig.getInitParameter(JWT_HEADER_SIGNING_ALG))
             .orElse(ofNullable(System.getenv("JWT_HEADER_SIGNING_ALG")).orElse("RS256, ES256"));
-      
-    Optional<String> jwtHeaderIssuer = 
+
+    Optional<String> jwtHeaderIssuer =
         ofNullable(filterConfig.getInitParameter(JWT_HEADER_ISSUER))
             .or(() -> ofNullable(System.getenv("JWT_HEADER_ISSUER")));
     Optional<String> jwtHeaderJWKSUri =
@@ -236,14 +234,17 @@ public class OidcAuthFilter implements Filter, Constants {
               new JOSEObjectType("jwt"), new JOSEObjectType("at+jwt")));
       // Retrieve the JWKS needed to verify the token
       JWKSource<SecurityContext> keySource =
-          JWKSourceBuilder.create(new URL(
-            jwtHeaderJWKSUri.orElse(oidcConfig.wellKnownConfiguration().jwksUri())))
+          JWKSourceBuilder.create(
+                  new URL(jwtHeaderJWKSUri.orElse(oidcConfig.wellKnownConfiguration().jwksUri())))
               .retrying(true)
               .build();
       // Define the signing algorithm supported for verifying the token
       // We retrieve this information from the well known configuration
-      Set<JWSAlgorithm> expectedJWSAlg = 
-        StreamEx.split(jwtHeaderSigningAlg,',').map(String::trim).map(JWSAlgorithm::parse).toSet();
+      Set<JWSAlgorithm> expectedJWSAlg =
+          StreamEx.split(jwtHeaderSigningAlg, ',')
+              .map(String::trim)
+              .map(JWSAlgorithm::parse)
+              .toSet();
 
       JWSKeySelector<SecurityContext> keySelector =
           new JWSVerificationKeySelector<>(expectedJWSAlg, keySource);
