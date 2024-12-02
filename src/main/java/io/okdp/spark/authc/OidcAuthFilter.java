@@ -75,6 +75,8 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import one.util.streamex.StreamEx;
+
 import org.apache.hc.core5.http.HttpStatus;
 
 @Slf4j
@@ -135,6 +137,16 @@ public class OidcAuthFilter implements Filter, Constants {
     jwtHeader =
         ofNullable(filterConfig.getInitParameter(JWT_HEADER))
             .orElse(ofNullable(System.getenv("JWT_HEADER")).orElse("jwt_token"));
+    String jwtHeaderSigningAlg =
+        ofNullable(filterConfig.getInitParameter(JWT_HEADER_SIGNING_ALG))
+            .orElse(ofNullable(System.getenv("JWT_HEADER_SIGNING_ALG")).orElse("RS256, ES256"));
+      
+    Optional<String> jwtHeaderIssuer = 
+        ofNullable(filterConfig.getInitParameter(JWT_HEADER_ISSUER))
+            .or(() -> ofNullable(System.getenv("JWT_HEADER_ISSUER")));
+    Optional<String> jwtHeaderJWKSUri =
+        ofNullable(filterConfig.getInitParameter(JWT_HEADER_JWKS_URI))
+            .or(() -> ofNullable(System.getenv("JWT_HEADER_JWKS_URI")));
 
     log.info(
         "Initializing OIDC Auth filter ({}: <{}>,  {}: <{}>) ...",
@@ -224,15 +236,14 @@ public class OidcAuthFilter implements Filter, Constants {
               new JOSEObjectType("jwt"), new JOSEObjectType("at+jwt")));
       // Retrieve the JWKS needed to verify the token
       JWKSource<SecurityContext> keySource =
-          JWKSourceBuilder.create(new URL(oidcConfig.wellKnownConfiguration().jwksUri()))
+          JWKSourceBuilder.create(new URL(
+            jwtHeaderJWKSUri.orElse(oidcConfig.wellKnownConfiguration().jwksUri())))
               .retrying(true)
               .build();
       // Define the signing algorithm supported for verifying the token
       // We retrieve this information from the well known configuration
-      Set<JWSAlgorithm> expectedJWSAlg =
-          oidcConfig.wellKnownConfiguration().idTokenSigningAlgValuesSupported().stream()
-              .map(JWSAlgorithm::parse)
-              .collect(Collectors.toSet());
+      Set<JWSAlgorithm> expectedJWSAlg = 
+        StreamEx.split(jwtHeaderSigningAlg,',').map(String::trim).map(JWSAlgorithm::parse).toSet();
 
       JWSKeySelector<SecurityContext> keySelector =
           new JWSVerificationKeySelector<>(expectedJWSAlg, keySource);
@@ -242,14 +253,13 @@ public class OidcAuthFilter implements Filter, Constants {
       jwtProcessor.setJWTClaimsSetVerifier(
           new DefaultJWTClaimsVerifier<>(
               new JWTClaimsSet.Builder()
-                  .issuer(oidcConfig.wellKnownConfiguration().issuer())
+                  .issuer(jwtHeaderIssuer.orElse(oidcConfig.wellKnownConfiguration().issuer()))
                   .build(),
               new HashSet<>(
                   Arrays.asList(
                       JWTClaimNames.SUBJECT,
                       JWTClaimNames.ISSUED_AT,
-                      JWTClaimNames.EXPIRATION_TIME,
-                      JWTClaimNames.JWT_ID))));
+                      JWTClaimNames.EXPIRATION_TIME))));
     } catch (MalformedURLException e) {
       throw new ServletException(e);
     }

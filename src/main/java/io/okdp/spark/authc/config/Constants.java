@@ -69,6 +69,15 @@ public interface Constants {
   /** The cookie name from where the JWT token will be extracted */
   String JWT_HEADER = "jwt-header";
 
+  /** The issuer of the JWT Token */
+  String JWT_HEADER_ISSUER = "jwt-header-issuer";
+
+  /** A comma separated list of Signing algorithm used for verifying the header signature */
+  String JWT_HEADER_SIGNING_ALG = "jwt-header-signing-alg";
+
+  /** the URI pointing to the JWKS used for the Token signature */
+  String JWT_HEADER_JWKS_URI = "jwt-header-jwks-uri";
+
   /** The cookie encryption key parameter name */
   String AUTH_COOKIE_ENCRYPTION_KEY = "cookie-cipher-secret-key";
 
