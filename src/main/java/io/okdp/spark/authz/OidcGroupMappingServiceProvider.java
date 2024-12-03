@@ -53,7 +53,7 @@ public class OidcGroupMappingServiceProvider implements GroupMappingServiceProvi
   public Set<String> getGroups(String authenticatedUser) {
     List<String> groups =
         Optional.ofNullable(userGroupsCache.getIfPresent(authenticatedUser)).orElse(emptyList());
-    log.info("Authorization - The user {} is member of the groups: {}", authenticatedUser, groups);
+    log.debug("Authorization - The user {} is member of the groups: {}", authenticatedUser, groups);
     // scala.collection.JavaConverters is deprecated in scala 2.13
     // and replaced by scala.jdk.CollectionConverters
     return asScalaSet(new HashSet<>(groups)).toSet();
