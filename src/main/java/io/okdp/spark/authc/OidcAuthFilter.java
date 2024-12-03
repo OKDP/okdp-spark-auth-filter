@@ -328,28 +328,20 @@ public class OidcAuthFilter implements Filter, Constants {
     Optional<String> maybeJWTHeader =
         HttpAuthenticationUtils.getHeaderValue(jwtHeader, servletRequest);
 
-    if (log.isInfoEnabled()) {
-      log.info("Request Headers Dump");
-      HttpAuthenticationUtils.getHeaders(servletRequest)
-          .forEach(
-              e -> log.info("Header : {}, Values : {}", e.getKey(), e.getValue().joining(",")));
-    }
-
     if (maybeJWTHeader.isPresent()) {
       JWTClaimsSet claimsSet;
 
       try {
-        log.info("JWT Header : {}", maybeJWTHeader.get());
+        log.debug("JWT Header : {}", maybeJWTHeader.get());
         claimsSet = jwtProcessor.process(maybeJWTHeader.get(), null);
         // Add the user and groups in the user/group mappings authorization cache
         PersistedToken persistedToken =
             authProvider.httpSecurityConfig().toPersistedToken(claimsSet);
         OidcGroupMappingServiceProvider.addUserAndGroups(
             persistedToken.id(), persistedToken.userInfo().getGroupsAndRoles());
-        log.info(
-            "JWT Token : User {} and groups {}",
-            persistedToken.id(),
-            persistedToken.userInfo().getGroupsAndRoles());
+        // Add the user and groups in the user/group mappings authorization cache
+        OidcGroupMappingServiceProvider.addUserAndGroups(
+            persistedToken.id(), persistedToken.userInfo().getGroupsAndRoles());
         filterChain.doFilter(
             new PrincipalHttpServletRequestWrapper(
                 (HttpServletRequest) servletRequest, persistedToken.id()),
@@ -363,7 +355,7 @@ public class OidcAuthFilter implements Filter, Constants {
         log.error("Error on JWT Token validation : {}", e.getMessage());
       }
     } else {
-      log.info("No JWT header ({}) found", jwtHeader);
+      log.debug("No JWT header ({}) found", jwtHeader);
     }
 
     // Get the oidc authorization code if the user is authenticated
@@ -385,7 +377,6 @@ public class OidcAuthFilter implements Filter, Constants {
               .onException(e -> sendError(servletResponse, e.getHttpStatusCode(), e.getMessage()));
       PersistedToken persistedToken =
           authProvider.httpSecurityConfig().toPersistedToken(accessToken);
-      // UserInfo userInfo = authProvider.httpSecurityConfig().userInfo(accessToken.accessToken());
       log.info(
           "Successfully authenticated user ({}): email {} sub {} (roles: {}, groups: {})",
           persistedToken.userInfo().name(),
