@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.3.0](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.2.2...v1.3.0) (2024-12-11)
+
+
+### Features
+
+* retrieve information from a jwt header ([2e98420](https://github.com/OKDP/okdp-spark-auth-filter/commit/2e98420bbd48203b6cba0a69564d06bcf21e38f2))
+
+
+### Bug Fixes
+
+* Add log for debugging purpose ([808077b](https://github.com/OKDP/okdp-spark-auth-filter/commit/808077bd480724c8635a137e5f3b5e4c1ec07d2d))
+
 ## [1.2.2](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.2.1...v1.2.2) (2024-07-01)
 
 
