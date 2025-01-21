@@ -16,12 +16,11 @@
 
 package io.okdp.spark.authc.model;
 
-import static org.apache.logging.log4j.util.Strings.isNotBlank;
-
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Strings;
 import io.okdp.spark.authc.provider.IdentityProvider;
 import io.okdp.spark.authc.utils.JsonUtils;
 import java.time.Instant;
@@ -63,7 +62,7 @@ public class PersistedToken {
 
   @JsonIgnore
   public boolean hasRefreshToken() {
-    return isNotBlank(refreshToken);
+    return Strings.nullToEmpty(refreshToken).trim().isEmpty();
   }
 
   /** Convert this object to json */
