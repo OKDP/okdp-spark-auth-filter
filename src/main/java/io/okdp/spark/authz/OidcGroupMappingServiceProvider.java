@@ -20,8 +20,8 @@ import static java.util.Collections.emptyList;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static scala.collection.JavaConverters.asScalaSet;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -39,7 +39,7 @@ import scala.collection.immutable.Set;
 public class OidcGroupMappingServiceProvider implements GroupMappingServiceProvider {
   // The user entry is added within the same http request
   private static final Cache<String, List<String>> userGroupsCache =
-      Caffeine.newBuilder().expireAfterWrite(59, MINUTES).maximumSize(1000).build();
+      CacheBuilder.newBuilder().expireAfterWrite(59, MINUTES).maximumSize(1000).build();
 
   public OidcGroupMappingServiceProvider() {
     log.info("Initializing {} ...", OidcGroupMappingServiceProvider.class);
