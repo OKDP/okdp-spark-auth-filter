@@ -39,26 +39,22 @@ public class CookieFactoryStoreTest {
   private AccessToken accessToken;
 
   @BeforeEach
-  public void setUp() throws JsonProcessingException {
-    try {
-      accessToken =
-          new ObjectMapper()
-              .readValue(
-                  "{\n"
-                      + "  \"access_token\": \"eyJhbGciOiJSUzI1NiIsImtpZCI6IjBkZWEwOTM5NDZjNDIwZjA4YTZjNTVmY2MxYTFhYTU0OWUyZGRjMjQifQ"
-                      + ".eyJpc3MiOiJodHRwczovL2RleC5va2RwLmxvY2FsL2RleCIsInN1YiI6IkNnTmliMklTQkd4a1lYQSIsImF1ZCI6ImRleC1vaWRjIiwiZXhwIjoxNzA4NDc2NzE5LCJpYXQiOjE3MDgzOTAzMTksImF0X2hhc2giOiJ4X2tLSHJqR2ZuU2ZrakR3SUdQUGJnIiwiZW1haWwiOiJib2JAZXhhbXBsZS5vcmciLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZ3JvdXBzIjpbInN1cGVyYWRtaW5zIl0sIm5hbWUiOiJib2IifQ"
-                      + ".iQHMPZHQ3Oc-gDSISd73paT-c6B6DlsTiuc4ACbIUpb-auxZsE6k6DhnrrLn7ZzUpb1i7_rGtsXW6W6fiRdFQ9L9JFz51d9XC9eLq_kiacEu7JVDoIQYrAm0xDxxKDN1mxS0H_BOiKVZgv6tJvEniKvH94wqt0ZG3x-YQPHm3C65RQtFH3mOxDSHqQC6pN2xUsz-jGKYIIhEyq1zYruJMYEilv8WITg2oxv6D1FaJmDwnQetEyfDxPxVD_bfANfcXcAomvQg1wCCjlHuNHeEwG4HYOub4HzlqrwRopYCBQLyP61A1D-wa83bPRh5T3ZWBtU5oU3NIxCLi3V6cLigqg\",\n"
-                      + "  \"token_type\": \"bearer\",\n"
-                      + "  \"expires_in\": 86399,\n"
-                      + "  \"refresh_token\": \"ChlvaWJmNXBuaG1rdWN0enppaGltaWp1MnJkEhlndmdzZ2tmcnVhd2x6cGV1a2ZnajNqdjJr\",\n"
-                      + "  \"id_token\": \"eyJhbGciOiJSUzI1NiIsImtpZCI6IjBkZWEwOTM5NDZjNDIwZjA4YTZjNTVmY2MxYTFhYTU0OWUyZGRjMjQifQ"
-                      + ".eyJpc3MiOiJodHRwczovL2RleC5va2RwLmxvY2FsL2RleCIsInN1YiI6IkNnTmliMklTQkd4a1lYQSIsImF1ZCI6ImRleC1vaWRjIiwiZXhwIjoxNzA4NDc2NzE5LCJpYXQiOjE3MDgzOTAzMTksImF0X2hhc2giOiI1WWdud2ZFNmszSjIxQkFpdm1ZaEZnIiwiY19oYXNoIjoiQlhXVjhrZWR4QkhDTHBCaUY0OUMyUSIsImVtYWlsIjoiYm9iQGV4YW1wbGUub3JnIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImdyb3VwcyI6WyJzdXBlcmFkbWlucyJdLCJuYW1lIjoiYm9iIn0"
-                      + ".hGlrvV_xXpc3h29S3KvYt11bftXnJ6cIu9Db_7Z6dgueVfmmBvB5Ml8inGfaUKj5KzBFvVS2YeSxLfr4yu4H0KWOKUyTIjkQqeGXh0JfOrKvIIViTxKi1U1OKnNmZxTYJCjJzjqvwZAgxlZRcEdizbH4wsNCYmQO9NUJDeULVlv0V7AkvS6jX0k2OrseOSh526l-SyhRVx8d4IXLHDRbr5ulnuR3nlhuUiILCtbpJFCHGB-XuwEkETRvL6F8nMpapG0x_Sw1XL5XZ6OQ1NNYDt11mdKDlKtf9cQi5TbIyk_OJ_Oayr4JU-o3Y3ov6tMs1R2RxIVxZnBQlqp7x5_03g\"\n"
-                      + "}",
-                  AccessToken.class);
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+  public void setUp() throws JsonProcessingException, IOException {
+    accessToken =
+        new ObjectMapper()
+            .readValue(
+                "{\n"
+                    + "  \"access_token\": \"eyJhbGciOiJSUzI1NiIsImtpZCI6IjBkZWEwOTM5NDZjNDIwZjA4YTZjNTVmY2MxYTFhYTU0OWUyZGRjMjQifQ"
+                    + ".eyJpc3MiOiJodHRwczovL2RleC5va2RwLmxvY2FsL2RleCIsInN1YiI6IkNnTmliMklTQkd4a1lYQSIsImF1ZCI6ImRleC1vaWRjIiwiZXhwIjoxNzA4NDc2NzE5LCJpYXQiOjE3MDgzOTAzMTksImF0X2hhc2giOiJ4X2tLSHJqR2ZuU2ZrakR3SUdQUGJnIiwiZW1haWwiOiJib2JAZXhhbXBsZS5vcmciLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZ3JvdXBzIjpbInN1cGVyYWRtaW5zIl0sIm5hbWUiOiJib2IifQ"
+                    + ".iQHMPZHQ3Oc-gDSISd73paT-c6B6DlsTiuc4ACbIUpb-auxZsE6k6DhnrrLn7ZzUpb1i7_rGtsXW6W6fiRdFQ9L9JFz51d9XC9eLq_kiacEu7JVDoIQYrAm0xDxxKDN1mxS0H_BOiKVZgv6tJvEniKvH94wqt0ZG3x-YQPHm3C65RQtFH3mOxDSHqQC6pN2xUsz-jGKYIIhEyq1zYruJMYEilv8WITg2oxv6D1FaJmDwnQetEyfDxPxVD_bfANfcXcAomvQg1wCCjlHuNHeEwG4HYOub4HzlqrwRopYCBQLyP61A1D-wa83bPRh5T3ZWBtU5oU3NIxCLi3V6cLigqg\",\n"
+                    + "  \"token_type\": \"bearer\",\n"
+                    + "  \"expires_in\": 86399,\n"
+                    + "  \"refresh_token\": \"ChlvaWJmNXBuaG1rdWN0enppaGltaWp1MnJkEhlndmdzZ2tmcnVhd2x6cGV1a2ZnajNqdjJr\",\n"
+                    + "  \"id_token\": \"eyJhbGciOiJSUzI1NiIsImtpZCI6IjBkZWEwOTM5NDZjNDIwZjA4YTZjNTVmY2MxYTFhYTU0OWUyZGRjMjQifQ"
+                    + ".eyJpc3MiOiJodHRwczovL2RleC5va2RwLmxvY2FsL2RleCIsInN1YiI6IkNnTmliMklTQkd4a1lYQSIsImF1ZCI6ImRleC1vaWRjIiwiZXhwIjoxNzA4NDc2NzE5LCJpYXQiOjE3MDgzOTAzMTksImF0X2hhc2giOiI1WWdud2ZFNmszSjIxQkFpdm1ZaEZnIiwiY19oYXNoIjoiQlhXVjhrZWR4QkhDTHBCaUY0OUMyUSIsImVtYWlsIjoiYm9iQGV4YW1wbGUub3JnIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImdyb3VwcyI6WyJzdXBlcmFkbWlucyJdLCJuYW1lIjoiYm9iIn0"
+                    + ".hGlrvV_xXpc3h29S3KvYt11bftXnJ6cIu9Db_7Z6dgueVfmmBvB5Ml8inGfaUKj5KzBFvVS2YeSxLfr4yu4H0KWOKUyTIjkQqeGXh0JfOrKvIIViTxKi1U1OKnNmZxTYJCjJzjqvwZAgxlZRcEdizbH4wsNCYmQO9NUJDeULVlv0V7AkvS6jX0k2OrseOSh526l-SyhRVx8d4IXLHDRbr5ulnuR3nlhuUiILCtbpJFCHGB-XuwEkETRvL6F8nMpapG0x_Sw1XL5XZ6OQ1NNYDt11mdKDlKtf9cQi5TbIyk_OJ_Oayr4JU-o3Y3ov6tMs1R2RxIVxZnBQlqp7x5_03g\"\n"
+                    + "}",
+                AccessToken.class);
   }
 
   @Test
