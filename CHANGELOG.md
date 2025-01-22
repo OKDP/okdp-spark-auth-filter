@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.3.0...v1.4.0) (2025-01-22)
+
+
+### Features
+
+* ensure java 8 compatibility by switching cache from caffeine to guava. Update for spark 2.4.8 compilation compatibility ([f8a078e](https://github.com/OKDP/okdp-spark-auth-filter/commit/f8a078e040859b28354908aae8222aa33234b93b))
+
 ## [1.3.0](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.2.2...v1.3.0) (2024-12-11)
 
 
