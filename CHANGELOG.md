@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.1](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.3.0...v1.3.1) (2025-01-22)
+
+
+### Bug Fixes
+
+* ensure java 8 compatibility by switching cache from caffeine to guava. Update for spark 2.4.8 compilation compatibility ([378deb9](https://github.com/OKDP/okdp-spark-auth-filter/commit/378deb94a2675cf17a2f257e53d9ff1296d41dc6))
+* remove log4j dependencies in PersistedToken class ([77fdce9](https://github.com/OKDP/okdp-spark-auth-filter/commit/77fdce94d43623503c9977815f3e4f9aa0dcacab))
+
 ## [1.3.0](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.2.2...v1.3.0) (2024-12-11)
 
 
