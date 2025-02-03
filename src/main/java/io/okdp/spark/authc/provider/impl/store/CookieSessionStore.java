@@ -48,6 +48,7 @@ public class CookieSessionStore implements SessionStore {
   @NonNull private Boolean isSecure;
   @NonNull private String encryptionKey;
   @NonNull private Integer cookieMaxAgeSeconds;
+  @NonNull Boolean ignoreRefreshToken;
 
   /**
    * Compress, encrypt and save the access token in a {@link Cookie}
@@ -66,6 +67,7 @@ public class CookieSessionStore implements SessionStore {
     // Encrypt the content to prevent token corruption
     String cookieValue =
         ofNullable(persistedToken)
+            .map(token -> token.ignoreRefreshToken(ignoreRefreshToken))
             .map(token -> persistedToken.toJson())
             .map(tokenAsJson -> encryptToString(compressToString(tokenAsJson), encryptionKey))
             .orElse("");

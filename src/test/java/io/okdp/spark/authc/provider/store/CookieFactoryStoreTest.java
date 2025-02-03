@@ -108,7 +108,7 @@ public class CookieFactoryStoreTest {
     String cookieDomain = "spark.okdp.local";
     SessionStore sessionStore =
         CookieSessionStore.of(
-            cookieName, cookieDomain, true, "E132A72E815F496FFC49B3EC876754F4", 60);
+            cookieName, cookieDomain, true, "E132A72E815F496FFC49B3EC876754F4", 60, false);
 
     // When
     PersistedToken originalPersistedToken =
@@ -132,6 +132,45 @@ public class CookieFactoryStoreTest {
     assertThat(cookie.getSecure()).isEqualTo(true);
     assertThat(cookie.getPath()).isEqualTo("/;SameSite=Strict;");
     assertThat(persistedToken.refreshToken()).isEqualTo(accessToken.refreshToken());
+    assertThat(persistedToken.expiresIn()).isEqualTo(accessToken.expiresIn());
+    assertThat(persistedToken.expiresAt())
+        .isAfter(
+            Instant.parse("2024-02-21T10:11:12.123Z").plusSeconds(accessToken.expiresIn() - 1));
+    assertThat(persistedToken.userInfo()).isEqualTo(TokenUtils.userInfo(accessToken.accessToken()));
+  }
+
+  @Test
+  public void should_save_and_read_token_stored_in_cookie_and_ignore_refresh_token() {
+    // Given
+    String cookieName = "spark";
+    String cookieDomain = "spark.okdp.local";
+    SessionStore sessionStore =
+        CookieSessionStore.of(
+            cookieName, cookieDomain, true, "E132A72E815F496FFC49B3EC876754F4", 60, true);
+
+    // When
+    PersistedToken originalPersistedToken =
+        PersistedToken.builder()
+            .userInfo(TokenUtils.userInfo(accessToken.accessToken()))
+            .refreshToken(accessToken.refreshToken())
+            .expiresIn(accessToken.expiresIn())
+            .expiresAt(
+                Date.from(
+                    Instant.parse("2024-02-21T10:11:12.123Z").plusSeconds(accessToken.expiresIn())))
+            .identityProvider(new EmailIdentityProvider())
+            .build();
+    Cookie cookie = sessionStore.save(originalPersistedToken);
+    PersistedToken persistedToken = sessionStore.readToken(cookie.getValue());
+
+    // Then
+    assertThat(cookie.getName()).isEqualTo(cookieName);
+    assertThat(cookie.getDomain()).isEqualTo(cookieDomain);
+    assertThat(cookie.getMaxAge()).isEqualTo(60);
+    assertThat(cookie.isHttpOnly()).isEqualTo(true);
+    assertThat(cookie.getSecure()).isEqualTo(true);
+    assertThat(cookie.getPath()).isEqualTo("/;SameSite=Strict;");
+    assertThat(persistedToken.refreshToken()).isEmpty();
+    assertThat(persistedToken.hasRefreshToken()).isFalse();
     assertThat(persistedToken.expiresIn()).isEqualTo(accessToken.expiresIn());
     assertThat(persistedToken.expiresAt())
         .isAfter(
