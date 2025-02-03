@@ -109,7 +109,8 @@ public class DefaultAuthorizationCodeAuthProviderTest implements Constants, Comm
                       HttpAuthenticationUtils.domain(redirectUri),
                       HttpAuthenticationUtils.isSecure(redirectUri),
                       cookieEncryptionKey,
-                      60))
+                      60,
+                      false))
               .configure();
     }
   }

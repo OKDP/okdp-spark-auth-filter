@@ -115,6 +115,11 @@ public class OidcAuthFilter implements Filter, Constants {
             ofNullable(filterConfig.getInitParameter(AUTH_SCOPE))
                 .orElse(System.getenv("AUTH_SCOPE")),
             AUTH_SCOPE);
+    boolean ignoreRefreshToken =
+        Boolean.parseBoolean(
+            ofNullable(filterConfig.getInitParameter(IGNORE_REFRESH_TOKEN))
+                .orElse(ofNullable(System.getenv("IGNORE_REFRESH_TOKEN")).orElse("false"))
+                .toLowerCase());
     String encryptionKey =
         PreconditionsUtils.checkNotNull(
             ofNullable(filterConfig.getInitParameter(AUTH_COOKIE_ENCRYPTION_KEY))
@@ -147,11 +152,13 @@ public class OidcAuthFilter implements Filter, Constants {
             .or(() -> ofNullable(System.getenv("JWT_HEADER_JWKS_URI")));
 
     log.info(
-        "Initializing OIDC Auth filter ({}: <{}>,  {}: <{}>) ...",
+        "Initializing OIDC Auth filter ({}: <{}>,  {}: <{}>,  {}: <{}>) ...",
         AUTH_ISSUER_URI,
         issuerUri,
         AUTH_CLIENT_ID,
-        clientId);
+        clientId,
+        IGNORE_REFRESH_TOKEN,
+        ignoreRefreshToken);
 
     ofNullable(clientSecret)
         .ifPresentOrElse(
@@ -174,6 +181,7 @@ public class OidcAuthFilter implements Filter, Constants {
             .scope(scope)
             .usePKCE(usePKCE)
             .identityProvider(IdentityProviderFactory.from(TokenUtils.capitalize(idProvider)))
+            .ignoreRefreshToken(ignoreRefreshToken)
             .wellKnownConfiguration(
                 JsonUtils.loadJsonFromUrl(
                     format("%s%s", issuerUri, AUTH_ISSUER_WELL_KNOWN_CONFIGURATION),
@@ -225,7 +233,8 @@ public class OidcAuthFilter implements Filter, Constants {
                     domain(oidcConfig.redirectUri()),
                     isCookieSecure,
                     encryptionKey,
-                    cookieMaxAgeMinutes * 60))
+                    cookieMaxAgeMinutes * 60,
+                    ignoreRefreshToken))
             .configure();
     try {
       // Define the token's type allowed
@@ -305,7 +314,7 @@ public class OidcAuthFilter implements Filter, Constants {
                               e.getMessage()));
         } else {
           log.info(
-              "The user {} token was expired, removing cookie and attempt to re-authenticate ... ",
+              "The user {} token was expired and no refresh token found. Removing cookie and attempt to re-authenticate ... ",
               persistedToken.userInfo().email());
         }
         PersistedToken pToken =

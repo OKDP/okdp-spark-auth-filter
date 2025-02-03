@@ -62,7 +62,7 @@ public class PersistedToken {
 
   @JsonIgnore
   public boolean hasRefreshToken() {
-    return Strings.nullToEmpty(refreshToken).trim().isEmpty();
+    return !Strings.nullToEmpty(refreshToken).trim().isEmpty();
   }
 
   /** Convert this object to json */
@@ -73,5 +73,17 @@ public class PersistedToken {
   /** Extract the id from UserInfo */
   public String id() {
     return identityProvider.extractId(this.userInfo);
+  }
+
+  /**
+   * Ignore refresh token
+   *
+   * @param ignore: whether to ignore refresh token storage
+   */
+  public PersistedToken ignoreRefreshToken(boolean ignore) {
+    if (ignore) {
+      this.refreshToken = "";
+    }
+    return this;
   }
 }

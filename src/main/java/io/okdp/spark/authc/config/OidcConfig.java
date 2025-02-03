@@ -32,6 +32,7 @@ public class OidcConfig {
   private String redirectUri;
   private String responseType;
   private String scope;
+  private boolean ignoreRefreshToken;
   private WellKnownConfiguration wellKnownConfiguration;
   private String usePKCE;
   private IdentityProvider identityProvider;

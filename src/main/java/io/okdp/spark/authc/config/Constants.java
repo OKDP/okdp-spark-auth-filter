@@ -36,6 +36,9 @@ public interface Constants {
   /** The oidc scope (ex.: openid+profile+email+groups+offline_access) */
   String AUTH_SCOPE = "scope";
 
+  /** Allow ignoring refresh token after token exchange */
+  String IGNORE_REFRESH_TOKEN = "ignore-refresh-token";
+
   /** OIDC standard well-known configuration endpoint */
   String AUTH_ISSUER_WELL_KNOWN_CONFIGURATION = "/.well-known/openid-configuration";
 

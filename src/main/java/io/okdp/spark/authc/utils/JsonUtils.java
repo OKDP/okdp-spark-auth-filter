@@ -53,8 +53,6 @@ public class JsonUtils {
   public static <T> T loadJsonFromString(String json, Class<T> type) throws RuntimeException {
     try {
       return mapper.readValue(json, type);
-    } catch (JsonProcessingException e) {
-      throw new OidcClientException(format("Unable to load json data into the class %s", type), e);
     } catch (IOException e) {
       throw new OidcClientException(format("Unable to load json data into the class %s", type), e);
     }
