@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.2](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.3.1...v1.3.2) (2025-02-04)
+
+
+### Bug Fixes
+
+* Allow ignoring refresh token storage in the cookie [#40](https://github.com/OKDP/okdp-spark-auth-filter/issues/40) ([ec3f9e2](https://github.com/OKDP/okdp-spark-auth-filter/commit/ec3f9e232c8adf726204486c3c54cc8e43865f70))
+
 ## [1.3.1](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.3.0...v1.3.1) (2025-01-22)
 
 
