@@ -95,4 +95,7 @@ public interface Constants {
 
   /** BASE64 decoder */
   Base64.Decoder BASE64_DECODER = Base64.getDecoder();
+
+  /** BASE64URL decoder */
+  Base64.Decoder BASE64URL_DECODER = Base64.getUrlDecoder();
 }
