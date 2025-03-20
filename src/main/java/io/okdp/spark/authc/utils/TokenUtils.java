@@ -27,7 +27,7 @@ public class TokenUtils implements Constants {
   public static UserInfo userInfo(String accessToken) {
     String[] parts = accessToken.split("\\.");
     return JsonUtils.loadJsonFromString(
-        new String(BASE64_DECODER.decode(parts[1])), UserInfo.class);
+        new String(BASE64URL_DECODER.decode(parts[1])), UserInfo.class);
   }
 
   /** Get oidc user info from a given JWTClaimSet */
