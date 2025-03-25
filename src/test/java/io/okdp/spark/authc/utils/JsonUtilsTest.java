@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.okdp.spark.authc.common.CommonTest;
 import io.okdp.spark.authc.model.AccessToken;
+import io.okdp.spark.authc.model.UserInfo;
 import io.okdp.spark.authc.model.WellKnownConfiguration;
 import org.junit.jupiter.api.Test;
 
@@ -56,5 +57,39 @@ public class JsonUtilsTest implements CommonTest {
     assertThat(token.refreshToken())
         .isEqualTo("ChlvaWJmNXBuaG1rdWN0enppaGltaWp1MnJkEhlndmdzZ2tmcnVhd2x6cGV1a2ZnajNqdjJr");
     assertThat(token.tokenType()).isEqualTo("bearer");
+  }
+
+  @Test
+  public void should_parse_single_value_groups_and_roles() {
+    String userInfoJson =
+        "{\n"
+            + "  \"sub\": \"sImtpZCI6IjBkZWEwOTM\",\n"
+            + "  \"name\": \"user\",\n"
+            + "  \"email\": user@example.org,\n"
+            + "  \"groups\": \"group1\",\n"
+            + "  \"roles\": \"role1\"\n"
+            + "}";
+
+    UserInfo userInfo = JsonUtils.loadJsonFromString(userInfoJson, UserInfo.class);
+
+    assertThat(userInfo.groups()).containsOnly("group1");
+    assertThat(userInfo.roles()).containsOnly("role1");
+  }
+
+  @Test
+  public void should_parse_multiple_value_groups_and_roles() {
+    String userInfoJson =
+        "{\n"
+            + "  \"sub\": \"sImtpZCI6IjBkZWEwOTM\",\n"
+            + "  \"name\": \"user\",\n"
+            + "  \"email\": user@example.org,\n"
+            + "  \"groups\": [\"group1\", \"group2\"],\n"
+            + "  \"roles\": [\"role1\", \"role2\"]\n"
+            + "}";
+
+    UserInfo userInfo = JsonUtils.loadJsonFromString(userInfoJson, UserInfo.class);
+
+    assertThat(userInfo.groups()).containsExactly("group1", "group2");
+    assertThat(userInfo.roles()).containsExactly("role1", "role2");
   }
 }

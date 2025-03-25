@@ -18,6 +18,7 @@ package io.okdp.spark.authc.model;
 
 import static java.util.Collections.emptyList;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -44,9 +45,11 @@ public class UserInfo {
   private String email;
 
   @JsonProperty("groups")
+  @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
   private List<String> groups = emptyList();
 
   @JsonProperty("roles")
+  @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
   private List<String> roles = emptyList();
 
   /**
