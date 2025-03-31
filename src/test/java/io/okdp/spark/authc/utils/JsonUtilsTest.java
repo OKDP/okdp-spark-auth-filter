@@ -65,7 +65,7 @@ public class JsonUtilsTest implements CommonTest {
         "{\n"
             + "  \"sub\": \"sImtpZCI6IjBkZWEwOTM\",\n"
             + "  \"name\": \"user\",\n"
-            + "  \"email\": user@example.org,\n"
+            + "  \"email\": \"user@example.org\",\n"
             + "  \"groups\": \"group1\",\n"
             + "  \"roles\": \"role1\"\n"
             + "}";
@@ -82,7 +82,7 @@ public class JsonUtilsTest implements CommonTest {
         "{\n"
             + "  \"sub\": \"sImtpZCI6IjBkZWEwOTM\",\n"
             + "  \"name\": \"user\",\n"
-            + "  \"email\": user@example.org,\n"
+            + "  \"email\": \"user@example.org\",\n"
             + "  \"groups\": [\"group1\", \"group2\"],\n"
             + "  \"roles\": [\"role1\", \"role2\"]\n"
             + "}";
