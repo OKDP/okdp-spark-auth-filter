@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.4](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.3.3...v1.3.4) (2025-04-01)
+
+
+### Bug Fixes
+
+* accept single values for group and roles ([3840e90](https://github.com/OKDP/okdp-spark-auth-filter/commit/3840e9072f38cabddfd7d0916832f418aeb36af7))
+* fix failing test ([7262c2c](https://github.com/OKDP/okdp-spark-auth-filter/commit/7262c2c56878f38345d9619e6a26bf0f6574e9f8))
+
 ## [1.3.3](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.3.2...v1.3.3) (2025-03-31)
 
 
