@@ -81,6 +81,7 @@ public class PKCEAuthorizationCodeAuthProvider extends AbstractAuthorizationCode
     try {
       Cookie cookie = httpSecurityConfig.sessionStore().save(authState);
       ((HttpServletResponse) servletResponse).addCookie(cookie);
+      servletResponse.setContentType("text/html;charset=UTF-8");
       servletResponse
           .getWriter()
           .print(
