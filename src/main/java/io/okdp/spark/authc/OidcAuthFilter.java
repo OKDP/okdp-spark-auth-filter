@@ -412,6 +412,7 @@ public class OidcAuthFilter implements Filter, Constants {
           persistedToken.id(), persistedToken.userInfo().getGroupsAndRoles());
       // Redirect the user from the browser (client) side into spark/history UI home page (i.e.
       // remove the authz 'code' from the browser)
+      servletResponse.setContentType("text/html;charset=UTF-8");
       servletResponse
           .getWriter()
           .print(
