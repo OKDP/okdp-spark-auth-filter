@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.5](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.3.4...v1.3.5) (2025-06-02)
+
+
+### Bug Fixes
+
+* add Content-Type header before redirecting to auth URL ([ab1ea99](https://github.com/OKDP/okdp-spark-auth-filter/commit/ab1ea99333df6788e8463a4233eb05abaf4ff6fc))
+
 ## [1.3.4](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.3.3...v1.3.4) (2025-04-01)
 
 
