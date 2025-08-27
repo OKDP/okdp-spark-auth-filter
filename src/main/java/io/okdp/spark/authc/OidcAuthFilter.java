@@ -134,9 +134,17 @@ public class OidcAuthFilter implements Filter, Constants {
     String usePKCE =
         ofNullable(filterConfig.getInitParameter(AUTH_USE_PKCE))
             .orElse(ofNullable(System.getenv("AUTH_USE_PKCE")).orElse("auto"));
+    boolean useIdToken =
+        Boolean.parseBoolean(
+            ofNullable(filterConfig.getInitParameter(AUTH_USE_IDTOKEN))
+                .orElse(ofNullable(System.getenv("AUTH_USE_IDTOKEN")).orElse("false"))
+                .toLowerCase());
     String idProvider =
         ofNullable(filterConfig.getInitParameter(AUTH_USER_ID))
             .orElse(ofNullable(System.getenv("AUTH_USER_ID")).orElse("Email"));
+    String extraGroupClaim =
+        ofNullable(filterConfig.getInitParameter(JWT_EXTRA_GROUP_CLAIM))
+            .orElse(ofNullable(System.getenv("JWT_EXTRA_GROUP_CLAIM")).orElse(""));
     jwtHeader =
         ofNullable(filterConfig.getInitParameter(JWT_HEADER))
             .orElse(ofNullable(System.getenv("JWT_HEADER")).orElse("jwt_token"));
@@ -152,13 +160,15 @@ public class OidcAuthFilter implements Filter, Constants {
             .or(() -> ofNullable(System.getenv("JWT_HEADER_JWKS_URI")));
 
     log.info(
-        "Initializing OIDC Auth filter ({}: <{}>,  {}: <{}>,  {}: <{}>) ...",
+        "Initializing OIDC Auth filter ({}: <{}>,  {}: <{}>,  {}: <{}>,  {}: <{}>,) ...",
         AUTH_ISSUER_URI,
         issuerUri,
         AUTH_CLIENT_ID,
         clientId,
         IGNORE_REFRESH_TOKEN,
-        ignoreRefreshToken);
+        ignoreRefreshToken,
+        AUTH_USE_IDTOKEN,
+        useIdToken);
 
     ofNullable(clientSecret)
         .ifPresentOrElse(
@@ -180,6 +190,8 @@ public class OidcAuthFilter implements Filter, Constants {
             .responseType("code")
             .scope(scope)
             .usePKCE(usePKCE)
+            .useIdToken(useIdToken)
+            .extraGroupClaim(extraGroupClaim)
             .identityProvider(IdentityProviderFactory.from(TokenUtils.capitalize(idProvider)))
             .ignoreRefreshToken(ignoreRefreshToken)
             .wellKnownConfiguration(
