@@ -66,8 +66,14 @@ public interface Constants {
   /** Use PKCE (true|false|auto) */
   String AUTH_USE_PKCE = "use-pkce";
 
+  /** use idToken instead of access token */
+  String AUTH_USE_IDTOKEN = "use-id-token";
+
   /** The user id wich will be extracted from the access token (EMAIL|SUB) */
   String AUTH_USER_ID = "user-id";
+
+  /** Extra groups should be extracted from the access token, in addition to 'groups' claim. */
+  String JWT_EXTRA_GROUP_CLAIM = "jwt-extra-group-claim";
 
   /** The cookie name from where the JWT token will be extracted */
   String JWT_HEADER = "jwt-header";

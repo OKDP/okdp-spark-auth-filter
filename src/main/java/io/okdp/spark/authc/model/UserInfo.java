@@ -62,7 +62,7 @@ public class UserInfo {
     return Stream.concat(groups.stream(), roles.stream()).collect(Collectors.toList());
   }
 
-  public static UserInfo fromJWTClaim(JWTClaimsSet claim) {
+  public static UserInfo fromJWTClaim(JWTClaimsSet claim, String extraGroupClaim) {
     UserInfo user = new UserInfo();
     user.sub = claim.getSubject();
     try {
@@ -81,6 +81,16 @@ public class UserInfo {
         user.groups = value.stream().map(v -> (String) v).collect(Collectors.toList());
     } catch (ParseException | ClassCastException e) {
     }
+    try {
+      List<Object> value = claim.getListClaim(extraGroupClaim);
+      if (value != null) {
+        List<String> extraGroups = value.stream().map(v -> (String) v).collect(Collectors.toList());
+        user.groups =
+            Stream.concat(user.groups.stream(), extraGroups.stream()).collect(Collectors.toList());
+      }
+    } catch (ParseException | ClassCastException e) {
+    }
+
     try {
       List<Object> value = claim.getListClaim("roles");
       if (value != null)

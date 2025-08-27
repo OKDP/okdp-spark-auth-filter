@@ -70,7 +70,8 @@ public class HttpSecurityConfig {
 
   public PersistedToken toPersistedToken(AccessToken token) {
     return PersistedToken.builder()
-        .userInfo(TokenUtils.userInfo(token.accessToken()))
+        .userInfo(
+            TokenUtils.userInfo(oidcConfig().useIdToken() ? token.idToken() : token.accessToken()))
         .refreshToken(token.refreshToken())
         .expiresIn(token.expiresIn())
         .expiresAt(from(now().plusSeconds(token.expiresIn())))
@@ -80,7 +81,7 @@ public class HttpSecurityConfig {
 
   public PersistedToken toPersistedToken(JWTClaimsSet claimsSet) {
     return PersistedToken.builder()
-        .userInfo(TokenUtils.userInfo(claimsSet))
+        .userInfo(TokenUtils.userInfo(claimsSet, oidcConfig().extraGroupClaim()))
         .refreshToken(null)
         .expiresAt(claimsSet.getExpirationTime())
         .identityProvider(oidcConfig().identityProvider())
