@@ -240,7 +240,7 @@ public class OidcAuthFilter implements Filter, Constants {
       // Define the token's type allowed
       jwtProcessor.setJWSTypeVerifier(
           new DefaultJOSEObjectTypeVerifier<>(
-              new JOSEObjectType("jwt"), new JOSEObjectType("at+jwt")));
+              new JOSEObjectType("jwt"), new JOSEObjectType("at+jwt"), null));
       // Retrieve the JWKS needed to verify the token
       JWKSource<SecurityContext> keySource =
           JWKSourceBuilder.create(
