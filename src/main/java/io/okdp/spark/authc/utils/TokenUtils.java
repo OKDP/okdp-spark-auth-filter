@@ -31,8 +31,8 @@ public class TokenUtils implements Constants {
   }
 
   /** Get oidc user info from a given JWTClaimSet */
-  public static UserInfo userInfo(JWTClaimsSet claimSet) {
-    return UserInfo.fromJWTClaim(claimSet);
+  public static UserInfo userInfo(JWTClaimsSet claimSet, String extraGroupClaim) {
+    return UserInfo.fromJWTClaim(claimSet, extraGroupClaim);
   }
 
   /** Upper case for first letter and lower case fo remaining letter */

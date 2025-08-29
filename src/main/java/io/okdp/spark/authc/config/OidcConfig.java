@@ -36,4 +36,6 @@ public class OidcConfig {
   private WellKnownConfiguration wellKnownConfiguration;
   private String usePKCE;
   private IdentityProvider identityProvider;
+  private boolean useIdToken;
+  private String extraGroupClaim;
 }
