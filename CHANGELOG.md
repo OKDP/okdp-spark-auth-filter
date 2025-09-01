@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.4.0](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.3.5...v1.4.0) (2025-09-01)
+
+
+### Features
+
+* allow idToken and extra group claim ([7effeaf](https://github.com/OKDP/okdp-spark-auth-filter/commit/7effeafaf112b6bc24d1911108ecf1c798d16688))
+
+
+### Bug Fixes
+
+* allow token with no typ field ([27d695a](https://github.com/OKDP/okdp-spark-auth-filter/commit/27d695a6ec43f8c9ad8220a4cf315240f4df2685))
+
+
+### Miscellaneous Chores
+
+* release 1.4.0 ([85a1d26](https://github.com/OKDP/okdp-spark-auth-filter/commit/85a1d26e5c822b5ab562499e4b287db2a90c37d4))
+
 ## [1.3.5](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.3.4...v1.3.5) (2025-06-02)
 
 
