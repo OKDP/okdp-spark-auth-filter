@@ -19,7 +19,7 @@
 
   <groupId>io.okdp</groupId>
   <artifactId>okdp-spark-auth-filter</artifactId>
-  <version>1.4.0</version>
+  <version>1.4.1-SNAPSHOT</version>
 
   <name>OIDC authentication filter for Apache spark</name>
   <description>OIDC authentication filter for Apache spark web UIs (Spark app and History Web UIs)
