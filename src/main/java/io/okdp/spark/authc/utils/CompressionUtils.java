@@ -18,6 +18,7 @@ package io.okdp.spark.authc.utils;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.io.ByteStreams;
 import io.okdp.spark.authc.config.Constants;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -53,7 +54,7 @@ public class CompressionUtils implements Constants {
       byte[] decoded = BASE64_DECODER.decode(base64Compressed.getBytes(UTF_8));
       ByteArrayInputStream in = new ByteArrayInputStream(decoded);
       GZIPInputStream gunzip = new GZIPInputStream(in);
-      return new String(gunzip.readAllBytes(), UTF_8);
+      return new String(ByteStreams.toByteArray(gunzip), UTF_8);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

@@ -25,6 +25,7 @@ import static io.okdp.spark.authc.utils.PreconditionsUtils.warnUnsupportedScopes
 import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
 
+import com.google.common.base.Strings;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JOSEObjectType;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -163,16 +164,15 @@ public class OidcAuthFilter implements Filter, Constants {
         AUTH_USE_IDTOKEN,
         useIdToken);
 
-    ofNullable(clientSecret)
-        .ifPresentOrElse(
-            secret ->
-                log.info(
-                    "Client Secret provided - Running with Confidential Client with PKCE support set to '{}'",
-                    usePKCE),
-            () ->
-                log.info(
-                    "Client Secret not provided - Running with Public Client with PKCE support set to '{}'",
-                    usePKCE));
+    if (!Strings.isNullOrEmpty(clientSecret)) {
+      log.info(
+          "Client Secret provided - Running with Confidential Client with PKCE support set to '{}'",
+          usePKCE);
+    } else {
+      log.info(
+          "Client Secret not provided - Running with Public Client with PKCE support set to '{}'",
+          usePKCE);
+    }
 
     OidcConfig oidcConfig =
         OidcConfig.builder()
@@ -380,7 +380,7 @@ public class OidcAuthFilter implements Filter, Constants {
 
     // Get the oidc authorization code if the user is authenticated
     Optional<String> maybeAuthzCode = ofNullable(servletRequest.getParameter("code"));
-    if (maybeAuthzCode.isEmpty()) {
+    if (!maybeAuthzCode.isPresent()) {
       // The previous redirect was maybe failed (prevent infinite loop)
       Try.of(() -> checkAuthLogin(servletRequest))
           .onException(e -> sendError(servletResponse, e.getHttpStatusCode(), e.getMessage()));

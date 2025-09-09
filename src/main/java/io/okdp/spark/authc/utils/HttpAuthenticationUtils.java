@@ -18,6 +18,7 @@ package io.okdp.spark.authc.utils;
 
 import static java.util.Optional.ofNullable;
 
+import com.google.common.base.Strings;
 import io.okdp.spark.authc.config.Constants;
 import io.okdp.spark.authc.exception.AuthenticationException;
 import io.okdp.spark.authc.exception.OidcClientException;
@@ -47,7 +48,9 @@ public class HttpAuthenticationUtils implements Constants {
    * @return the cookie content if the cookie exists or return empty if it does not exist
    */
   public static Optional<String> getCookieValue(String cookieName, ServletRequest request) {
-    return getCookie(cookieName, request).map(Cookie::getValue).filter(v -> !v.isBlank());
+    return getCookie(cookieName, request)
+        .map(Cookie::getValue)
+        .filter(v -> !Strings.isNullOrEmpty(v));
   }
 
   /**
