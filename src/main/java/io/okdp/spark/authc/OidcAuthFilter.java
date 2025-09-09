@@ -154,10 +154,10 @@ public class OidcAuthFilter implements Filter, Constants {
 
     Optional<String> jwtHeaderIssuer =
         ofNullable(filterConfig.getInitParameter(JWT_HEADER_ISSUER))
-            .or(() -> ofNullable(System.getenv("JWT_HEADER_ISSUER")));
+            .orElse(ofNullable(System.getenv("JWT_HEADER_ISSUER")));
     Optional<String> jwtHeaderJWKSUri =
         ofNullable(filterConfig.getInitParameter(JWT_HEADER_JWKS_URI))
-            .or(() -> ofNullable(System.getenv("JWT_HEADER_JWKS_URI")));
+            .orElse(ofNullable(System.getenv("JWT_HEADER_JWKS_URI")));
 
     log.info(
         "Initializing OIDC Auth filter ({}: <{}>,  {}: <{}>,  {}: <{}>,  {}: <{}>,) ...",
