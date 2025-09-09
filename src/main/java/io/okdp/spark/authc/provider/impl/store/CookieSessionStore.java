@@ -21,6 +21,7 @@ import static io.okdp.spark.authc.utils.CompressionUtils.compressToString;
 import static io.okdp.spark.authc.utils.EncryptionUtils.encryptToString;
 import static java.util.Optional.ofNullable;
 
+import com.google.common.base.Strings;
 import io.okdp.spark.authc.model.AccessToken;
 import io.okdp.spark.authc.model.AuthState;
 import io.okdp.spark.authc.model.PersistedToken;
@@ -73,7 +74,10 @@ public class CookieSessionStore implements SessionStore {
             .orElse("");
 
     int maxAge =
-        Optional.of(cookieValue).filter(v -> !v.isBlank()).map(v -> cookieMaxAgeSeconds).orElse(0);
+        Optional.of(cookieValue)
+            .filter(v -> !Strings.isNullOrEmpty(v))
+            .map(v -> cookieMaxAgeSeconds)
+            .orElse(0);
 
     return CookieFactory.of(cookieName, cookieValue, cookieDomain, isSecure, maxAge).newCookie();
   }
@@ -99,7 +103,8 @@ public class CookieSessionStore implements SessionStore {
             .map(state -> encryptToString(state, encryptionKey))
             .orElse("");
 
-    int maxAge = Optional.of(cookieValue).filter(v -> !v.isBlank()).map(v -> 5 * 60).orElse(0);
+    int maxAge =
+        Optional.of(cookieValue).filter(v -> !Strings.isNullOrEmpty(v)).map(v -> 5 * 60).orElse(0);
 
     Cookie cookie =
         CookieFactory.of(AUTH_STATE_COOKE_NAME, cookieValue, cookieDomain, isSecure, maxAge)

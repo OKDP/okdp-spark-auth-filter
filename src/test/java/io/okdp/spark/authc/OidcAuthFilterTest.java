@@ -17,8 +17,8 @@
 package io.okdp.spark.authc;
 
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -37,7 +37,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.util.HashSet;
-import java.util.List;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
@@ -221,6 +220,6 @@ public class OidcAuthFilterTest implements Constants, CommonTest {
 
     // Then
     assertThat(groupMappingServiceProvider.getGroups("bob@example.org"))
-        .isEqualTo(asScalaSet(new HashSet<>(List.of("superadmins"))).toSet());
+        .isEqualTo(asScalaSet(new HashSet<>(asList("superadmins"))).toSet());
   }
 }

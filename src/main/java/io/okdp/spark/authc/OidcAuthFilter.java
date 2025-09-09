@@ -25,6 +25,7 @@ import static io.okdp.spark.authc.utils.PreconditionsUtils.warnUnsupportedScopes
 import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
 
+import com.google.common.base.Strings;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JOSEObjectType;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -152,13 +153,6 @@ public class OidcAuthFilter implements Filter, Constants {
         ofNullable(filterConfig.getInitParameter(JWT_HEADER_SIGNING_ALG))
             .orElse(ofNullable(System.getenv("JWT_HEADER_SIGNING_ALG")).orElse("RS256, ES256"));
 
-    Optional<String> jwtHeaderIssuer =
-        ofNullable(filterConfig.getInitParameter(JWT_HEADER_ISSUER))
-            .or(() -> ofNullable(System.getenv("JWT_HEADER_ISSUER")));
-    Optional<String> jwtHeaderJWKSUri =
-        ofNullable(filterConfig.getInitParameter(JWT_HEADER_JWKS_URI))
-            .or(() -> ofNullable(System.getenv("JWT_HEADER_JWKS_URI")));
-
     log.info(
         "Initializing OIDC Auth filter ({}: <{}>,  {}: <{}>,  {}: <{}>,  {}: <{}>,) ...",
         AUTH_ISSUER_URI,
@@ -170,16 +164,15 @@ public class OidcAuthFilter implements Filter, Constants {
         AUTH_USE_IDTOKEN,
         useIdToken);
 
-    ofNullable(clientSecret)
-        .ifPresentOrElse(
-            secret ->
-                log.info(
-                    "Client Secret provided - Running with Confidential Client with PKCE support set to '{}'",
-                    usePKCE),
-            () ->
-                log.info(
-                    "Client Secret not provided - Running with Public Client with PKCE support set to '{}'",
-                    usePKCE));
+    if (!Strings.isNullOrEmpty(clientSecret)) {
+      log.info(
+          "Client Secret provided - Running with Confidential Client with PKCE support set to '{}'",
+          usePKCE);
+    } else {
+      log.info(
+          "Client Secret not provided - Running with Public Client with PKCE support set to '{}'",
+          usePKCE);
+    }
 
     OidcConfig oidcConfig =
         OidcConfig.builder()
@@ -199,6 +192,17 @@ public class OidcAuthFilter implements Filter, Constants {
                     format("%s%s", issuerUri, AUTH_ISSUER_WELL_KNOWN_CONFIGURATION),
                     WellKnownConfiguration.class))
             .build();
+
+    String jwtHeaderIssuer =
+        ofNullable(filterConfig.getInitParameter(JWT_HEADER_ISSUER))
+            .orElse(
+                ofNullable(System.getenv("JWT_HEADER_ISSUER"))
+                    .orElse(oidcConfig.wellKnownConfiguration().issuer()));
+    String jwtHeaderJWKSUri =
+        ofNullable(filterConfig.getInitParameter(JWT_HEADER_JWKS_URI))
+            .orElse(
+                ofNullable(System.getenv("JWT_HEADER_JWKS_URI"))
+                    .orElse(oidcConfig.wellKnownConfiguration().jwksUri()));
 
     log.info(
         "Your OIDC provider well known configuration: \n"
@@ -255,10 +259,7 @@ public class OidcAuthFilter implements Filter, Constants {
               new JOSEObjectType("jwt"), new JOSEObjectType("at+jwt"), null));
       // Retrieve the JWKS needed to verify the token
       JWKSource<SecurityContext> keySource =
-          JWKSourceBuilder.create(
-                  new URL(jwtHeaderJWKSUri.orElse(oidcConfig.wellKnownConfiguration().jwksUri())))
-              .retrying(true)
-              .build();
+          JWKSourceBuilder.create(new URL(jwtHeaderJWKSUri)).retrying(true).build();
       // Define the signing algorithm supported for verifying the token
       // We retrieve this information from the well known configuration
       Set<JWSAlgorithm> expectedJWSAlg =
@@ -274,9 +275,7 @@ public class OidcAuthFilter implements Filter, Constants {
       // Set the required JWT claims for tokens
       jwtProcessor.setJWTClaimsSetVerifier(
           new DefaultJWTClaimsVerifier<>(
-              new JWTClaimsSet.Builder()
-                  .issuer(jwtHeaderIssuer.orElse(oidcConfig.wellKnownConfiguration().issuer()))
-                  .build(),
+              new JWTClaimsSet.Builder().issuer(jwtHeaderIssuer).build(),
               new HashSet<>(
                   Arrays.asList(
                       JWTClaimNames.SUBJECT,
@@ -381,7 +380,7 @@ public class OidcAuthFilter implements Filter, Constants {
 
     // Get the oidc authorization code if the user is authenticated
     Optional<String> maybeAuthzCode = ofNullable(servletRequest.getParameter("code"));
-    if (maybeAuthzCode.isEmpty()) {
+    if (!maybeAuthzCode.isPresent()) {
       // The previous redirect was maybe failed (prevent infinite loop)
       Try.of(() -> checkAuthLogin(servletRequest))
           .onException(e -> sendError(servletResponse, e.getHttpStatusCode(), e.getMessage()));

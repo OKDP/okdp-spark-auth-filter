@@ -18,12 +18,12 @@ package io.okdp.spark.authc.utils;
 
 import static io.okdp.spark.authc.utils.PreconditionsUtils.assertSupportePKCE;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.ThrowableAssert.catchThrowable;
 
 import io.okdp.spark.authc.exception.AuthenticationException;
-import java.util.List;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.jupiter.api.Test;
 
@@ -86,16 +86,16 @@ public class PreconditionsUtilsTest {
         () -> assertSupportePKCE(asList("plain", "S256"), "true", null, "client-secret");
 
     ThrowingCallable validConf3 =
-        () -> assertSupportePKCE(List.of(), "true", null, "client-secret");
+        () -> assertSupportePKCE(emptyList(), "true", null, "client-secret");
 
     ThrowingCallable validConf4 =
-        () -> assertSupportePKCE(List.of(), "false", "ClientSecret@", "client-secret");
+        () -> assertSupportePKCE(emptyList(), "false", "ClientSecret@", "client-secret");
 
     ThrowingCallable invalidConf1 =
         () -> assertSupportePKCE(asList("plain", "S256"), "false", null, "client-secret");
 
     ThrowingCallable invalidConf2 =
-        () -> assertSupportePKCE(List.of(), "auto", null, "client-secret");
+        () -> assertSupportePKCE(emptyList(), "auto", null, "client-secret");
 
     // Then
     assertThatCode(validConf1).doesNotThrowAnyException();

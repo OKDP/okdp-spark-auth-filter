@@ -21,9 +21,7 @@ import static java.util.Collections.emptySet;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static scala.collection.JavaConverters.asScalaSet;
 
-import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import org.junit.jupiter.api.Test;
 
 public class OidcGroupMappingServiceProviderTest {
@@ -36,12 +34,12 @@ public class OidcGroupMappingServiceProviderTest {
 
     // When
     OidcGroupMappingServiceProvider.addUserAndGroups("user1@example.org", asList("team1", "team2"));
-    OidcGroupMappingServiceProvider.addUserAndGroups("user2@example.org", List.of("team2"));
+    OidcGroupMappingServiceProvider.addUserAndGroups("user2@example.org", asList("team2"));
     // Then
     assertThat(groupMappingServiceProvider.getGroups("user1@example.org"))
-        .isEqualTo(asScalaSet(new HashSet<>(Arrays.asList("team1", "team2"))).toSet());
+        .isEqualTo(asScalaSet(new HashSet<>(asList("team1", "team2"))).toSet());
     assertThat(groupMappingServiceProvider.getGroups("user2@example.org"))
-        .isEqualTo(asScalaSet(new HashSet<>(List.of("team2"))).toSet());
+        .isEqualTo(asScalaSet(new HashSet<>(asList("team2"))).toSet());
   }
 
   @Test
