@@ -328,6 +328,10 @@
                   <pattern>com.google.common</pattern>
                   <shadedPattern>io.okdp_shaded.com.google.common</shadedPattern>
                 </relocation>
+                <relocation>
+                  <pattern>com.nimbusds</pattern>
+                  <shadedPattern>io.okdp_shaded.com.nimbusds</shadedPattern>
+                </relocation>
               </relocations>
             </configuration>
           </execution>
