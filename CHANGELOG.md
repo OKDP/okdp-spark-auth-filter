@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.4.0...v1.4.1) (2025-09-15)
+
+
+### Bug Fixes
+
+* java 8 compatibility ([a99dd99](https://github.com/OKDP/okdp-spark-auth-filter/commit/a99dd99de3450e9237a1f8d4023b6941df68824e))
+
 ## [1.4.0](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.3.5...v1.4.0) (2025-09-01)
 
 
