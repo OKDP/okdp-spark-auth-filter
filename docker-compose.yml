@@ -1,0 +1,111 @@
+x- spark-pi: &spark-pi
+  build:
+    context: .
+    dockerfile: .local/Dockerfile${PROFILE:+-$PROFILE}
+  command:
+    - sh
+    - -c
+    - |
+      /opt/spark/bin/spark-submit \
+      --class org.apache.spark.examples.SparkPi \
+      --master local[2] \
+      --conf spark.admin.acls.groups=$${ADMIN_GROUP} \
+      --conf spark.modify.acls.groups=$${EDIT_GROUP} \
+      --conf spark.ui.view.acls.groups=$${VIEW_GROUP} \
+      /opt/spark/examples/jars/spark-examples_*.jar 10
+  volumes:
+    - ./.spark-events:/tmp/spark-events
+
+services:
+
+  # By structuring the startup sequence this way, the flow of logs is easier to follow.
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    command: ["start-dev", "--http-port", "18082", "--https-port", "18083", "--health-enabled", "true"]
+    env_file:
+      - .env
+    healthcheck:
+      # https://gist.github.com/sarath-soman/5d9aec06953bbd0990c648605d4dba07
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000; echo -e 'GET /health/ready HTTP/1.1\r\nHost: localhost:9000\r\nConnection: close\r\n\r\n' >&3;cat <&3 | grep -q '\"status\": \"UP\"' && exit 0 || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    ports:
+      - "18082:18082"
+      - "18083:18083"
+      - "18090:9000"
+
+  create-clients:
+    image: quay.io/keycloak/keycloak:26.0
+    env_file:
+      - .env
+    entrypoint:
+      - sh
+      - -c
+      - |
+        rm -f /tmp/finished.flag
+        sh .local/keycloak.sh
+        touch /tmp/finished.flag
+        while [ -f /tmp/finished.flag ]; do sleep 3; done
+    restart: "no"
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    working_dir: /workspace
+    volumes:
+      - .local:/workspace/.local
+    healthcheck:
+      test: ["CMD-SHELL", "if [ ! -f /tmp/finished.flag ]; then exit 1; fi"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+    links:
+      - keycloak
+
+  spark-history-server:
+    build:
+      context: .
+      dockerfile: .local/Dockerfile${PROFILE:+-$PROFILE}
+    command:
+      - sh
+      - -c
+      - |
+        /opt/spark/bin/spark-class \
+          org.apache.spark.deploy.history.HistoryServer \
+          --properties-file /opt/spark/conf/spark-defaults.conf
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail http://localhost:18080/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "18080:18080"
+    volumes:
+      - ./.spark-events:/tmp/spark-events
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      create-clients:
+        condition: service_healthy
+    links:
+      - keycloak
+
+  # http://localhost:18080
+  # Remove the spark okdp and keycloak cookies for each different login
+  ### User: dev1, Password: user, Groups: developers
+  ### User: adm1, Password: user, Groups: admins
+  ### User: view1, Password: user, Groups: viewers
+  spark-pi-developers-only:
+    # Allow the group 'developers' to administer my job
+    # Access to the job is denied for other groups 'viewers' and 'admins'
+    <<: *spark-pi
+    environment:
+      SPARK_USER: "dev1.developers@example.org"
+      ADMIN_GROUP: "developers"
+      EDIT_GROUP: ""
+      VIEW_GROUP: ""
+    depends_on:
+      spark-history-server:
+        condition: service_healthy
+    links:
+      - keycloak

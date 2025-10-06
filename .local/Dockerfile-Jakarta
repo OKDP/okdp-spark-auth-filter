@@ -1,0 +1,6 @@
+ARG BASE_IMAGE=apache/spark:4.1.0-preview1-scala2.13-java17-ubuntu
+FROM $BASE_IMAGE
+
+COPY .local/spark-defaults.conf /opt/spark/conf/
+COPY target/okdp-spark-auth-filter-*-SNAPSHOT-jakarta.jar /opt/spark/jars/
+
