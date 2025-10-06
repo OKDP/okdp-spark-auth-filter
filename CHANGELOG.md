@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.2](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.4.1...v1.4.2) (2025-10-06)
+
+
+### Bug Fixes
+
+* add support for Spark 4+ [#90](https://github.com/OKDP/okdp-spark-auth-filter/issues/90) ([7cf0fa7](https://github.com/OKDP/okdp-spark-auth-filter/commit/7cf0fa7dab21126fe76e8182ab0271344462a491))
+
 ## [1.4.1](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.4.0...v1.4.1) (2025-09-15)
 
 
