@@ -348,7 +348,17 @@ PROFILE=Jakarta docker-compose up --build
 
 Browse to: http://localhost:18080/
 
+| User  | Password  | Group      |
+|-------|-----------|------------|
+| dev1  | user      | developers |
+| dev2  | user      | developers |
+| view1 | user      | viewers    |
+| adm1  | user      | admins     |
+
+
 The Spark Auth Filter relies on a local cookie for authentication. Remove both the `OKDP_AUTH_SPARK_UI` cookie and the local Keycloak cookie from your local browser at each re-login.
+
+For more details, check [docker-compose.yml](docker-compose.yml), [env](.env) and [local setup](.local)
 
 ### Clean up:
 

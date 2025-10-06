@@ -93,6 +93,7 @@ services:
   # http://localhost:18080
   # Remove the spark okdp and keycloak cookies for each different login
   ### User: dev1, Password: user, Groups: developers
+  ### User: dev2, Password: user, Groups: developers
   ### User: adm1, Password: user, Groups: admins
   ### User: view1, Password: user, Groups: viewers
   spark-pi-developers-only:
