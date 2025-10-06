@@ -37,8 +37,16 @@ Please, check the [latest release note](https://github.com/OKDP/okdp-spark-auth-
 
 1. Using Docker
 
+Spark 3.x (default jar):
+
 ```shell
-ADD https://repo1.maven.org/maven2/io/okdp/okdp-spark-auth-filter/1.4.1/okdp-spark-auth-filter-1.4.1.jar ${SPARK_HOME}/jars
+ADD https://repo1.maven.org/maven2/io/okdp/okdp-spark-auth-filter/1.4.2/okdp-spark-auth-filter-1.4.2.jar ${SPARK_HOME}/jars
+```
+
+Spark 4+ (jakarta jar):
+
+```shell
+ADD https://repo1.maven.org/maven2/io/okdp/okdp-spark-auth-filter/1.4.2/okdp-spark-auth-filter-1.4.2-jakarta.jar ${SPARK_HOME}/jars
 ```
 
 2. Using Maven
@@ -47,13 +55,21 @@ ADD https://repo1.maven.org/maven2/io/okdp/okdp-spark-auth-filter/1.4.1/okdp-spa
 <dependency>
   <groupId>io.okdp</groupId>
   <artifactId>okdp-spark-auth-filter</artifactId>
-  <version>1.4.1</version>
+  <version>1.4.2</version>
+  <!-- Spark 4+: Use jakarta classifier -->
+  <!-- <classifier>jakarta</classifier> -->
 </dependency>
 ```
 
 3. Spark on Yarn/Standalone mode
 
-Copy the jar https://repo1.maven.org/maven2/io/okdp/okdp-spark-auth-filter/1.4.1/okdp-spark-auth-filter-1.4.1.jar into `${SPARK_HOME}/jars/` in the different spark nodes
+Spark 3.x (default jar):
+
+Copy the jar https://repo1.maven.org/maven2/io/okdp/okdp-spark-auth-filter/1.4.2/okdp-spark-auth-filter-1.4.2.jar into `${SPARK_HOME}/jars/` in the different spark nodes
+
+Spark 4+ (jakarta jar):
+
+Copy the jar https://repo1.maven.org/maven2/io/okdp/okdp-spark-auth-filter/1.4.2/okdp-spark-auth-filter-1.4.2-jakarta.jar into `${SPARK_HOME}/jars/` in the different spark nodes
 
 # Configuration
 
@@ -305,6 +321,39 @@ spark-submit -conf spark.admin.acls.groups=admins,admin-role \
 --conf spark.modify.acls=bob@example.org \
 --conf spark.ui.view.acls=bob@example.org,bill@example.org \
   ...
+```
+
+# Test locally using Docker Compose 
+
+### Update Hosts File
+
+Add the following entry to your `/etc/hosts`:
+```
+127.0.0.1       keycloak
+```
+### Build and Run
+#### For Spark 3.x:
+
+```shell
+mvn clean package
+docker-compose up --build
+```
+
+#### For Spark 4+:
+
+```shell
+mvn clean package
+PROFILE=Jakarta docker-compose up --build
+```
+
+Browse to: http://localhost:18080/
+
+The Spark Auth Filter relies on a local cookie for authentication. Remove both the `OKDP_AUTH_SPARK_UI` cookie and the local Keycloak cookie from your local browser at each re-login.
+
+### Clean up:
+
+```shell
+docker-compose rm -f
 ```
 
 # Use cases, limitation and future work
