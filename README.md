@@ -1,5 +1,9 @@
 ![Build](https://github.com/okdp/okdp-spark-auth-filter/actions/workflows/ci.yml/badge.svg?branch=main)
+[![Release](https://img.shields.io/github/v/release/okdp/okdp-spark-auth-filter)](https://github.com/okdp/okdp-spark-auth-filter/releases/latest)
 [![License Apache2](https://img.shields.io/hexpm/l/plug.svg)](http://www.apache.org/licenses/LICENSE-2.0)
+<a href="https://okdp.io">
+  <img src="https://okdp.io/logos/okdp-notext.svg" height="20px" style="margin: 0 2px;" />
+</a>
 
 [Apache Spark](https://spark.apache.org/) extension filter to enable Oauth2/OpenID Connect based authentication for Spark UIs and Spark History.
 
