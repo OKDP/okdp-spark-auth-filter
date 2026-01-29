@@ -76,6 +76,8 @@
     <maven-gpg-plugin.version>3.1.0</maven-gpg-plugin.version>
     <nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
     <central-publishing-maven-plugin.version>0.4.0</central-publishing-maven-plugin.version>
+    <!-- Licenses -->
+    <license-maven-plugin.version>2.7.1</license-maven-plugin.version>
   </properties>
 
   <dependencyManagement>
@@ -283,6 +285,12 @@
           <artifactId>central-publishing-maven-plugin</artifactId>
           <version>${central-publishing-maven-plugin.version}</version>
         </plugin>
+        <!-- Licenses -->
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>license-maven-plugin</artifactId>
+          <version>${license-maven-plugin.version}</version>
+        </plugin>
       </plugins>
     </pluginManagement>
     <!-- ************************************* -->
@@ -303,6 +311,14 @@
               <shadedArtifactAttached>false</shadedArtifactAttached>
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
+                  <resource>LICENSE</resource>
+                  <file>${project.basedir}/LICENSE</file>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
+                  <resource>NOTICE</resource>
+                  <file>${project.basedir}/NOTICE</file>
+                </transformer>
               </transformers>
               <artifactSet>
                 <excludes>
@@ -454,6 +470,28 @@
           <autoPublish>false</autoPublish>
           <skipPublishing>false</skipPublishing>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>license-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>download-licenses-into-jar</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>download-licenses</goal>
+            </goals>
+            <configuration>
+              <licensesOutputDirectory>${project.build.outputDirectory}/META-INF/licenses</licensesOutputDirectory>
+              <organizeLicensesByDependencies>true</organizeLicensesByDependencies>
+              <includedScopes>compile,runtime</includedScopes>
+              <excludedScopes>test,provided,system</excludedScopes>
+              <excludedGroups>org\.slf4j</excludedGroups>
+              <useDefaultUrlReplacements>true</useDefaultUrlReplacements>
+              <errorRemedy>warn</errorRemedy>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
