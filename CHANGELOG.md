@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.3](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.4.2...v1.4.3) (2026-01-30)
+
+
+### Documentation
+
+* update README with release status badges and OKDP branding ([5ca21b8](https://github.com/OKDP/okdp-spark-auth-filter/commit/5ca21b8c932854e107f7f0a1f96f9035088fe879))
+
 ## [1.4.2](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.4.1...v1.4.2) (2025-10-06)
 
 
