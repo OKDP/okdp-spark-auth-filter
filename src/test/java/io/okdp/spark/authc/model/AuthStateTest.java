@@ -32,5 +32,38 @@ public class AuthStateTest {
     assertThat(authState.state()).isNotBlank();
     assertThat(authState.codeVerifier().length()).isBetween(43, 128);
     assertThat(authState.codeVerifier()).isASCII();
+    assertThat(authState.returnUrl()).isNull();
+  }
+
+  @Test
+  public void should_carry_return_url_through_oidc_roundtrip() {
+    // Given a deep-link URL the user initially requested (e.g. a Spark History Server job page)
+    String returnUrl = "/history/spark-abc123/jobs/";
+
+    // When
+    AuthState authState = AuthState.randomState(returnUrl);
+
+    // Then - the return URL is preserved alongside the PKCE state so the filter can redirect the
+    // user back to their original deep-link after a successful OIDC authentication
+    assertThat(authState.state()).isNotBlank();
+    assertThat(authState.codeVerifier().length()).isBetween(43, 128);
+    assertThat(authState.returnUrl()).isEqualTo(returnUrl);
+  }
+
+  @Test
+  public void should_survive_json_serialization_with_return_url() {
+    // Given
+    AuthState original = AuthState.randomState("/history/spark-xyz/stages/");
+
+    // When - the state is serialized to JSON (how it is stored in the encrypted state cookie)
+    String json = original.toJson();
+    AuthState restored =
+        io.okdp.spark.authc.utils.JsonUtils.loadJsonFromString(json, AuthState.class);
+
+    // Then - every field, including the return URL, round-trips through JSON
+    assertThat(restored.state()).isEqualTo(original.state());
+    assertThat(restored.codeVerifier()).isEqualTo(original.codeVerifier());
+    assertThat(restored.codeChallenge()).isEqualTo(original.codeChallenge());
+    assertThat(restored.returnUrl()).isEqualTo(original.returnUrl());
   }
 }

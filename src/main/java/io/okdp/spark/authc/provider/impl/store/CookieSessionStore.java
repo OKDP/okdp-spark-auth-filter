@@ -157,7 +157,7 @@ public class CookieSessionStore implements SessionStore {
       cookie.setDomain(cookieDomain);
       cookie.setHttpOnly(true);
       cookie.setSecure(isSecure);
-      cookie.setPath("/;SameSite=Strict;");
+      cookie.setPath("/;SameSite=Lax;");
       return cookie;
     }
   }

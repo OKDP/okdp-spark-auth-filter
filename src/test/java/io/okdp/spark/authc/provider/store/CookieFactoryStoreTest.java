@@ -130,7 +130,7 @@ public class CookieFactoryStoreTest {
     assertThat(cookie.getMaxAge()).isEqualTo(60);
     assertThat(cookie.isHttpOnly()).isEqualTo(true);
     assertThat(cookie.getSecure()).isEqualTo(true);
-    assertThat(cookie.getPath()).isEqualTo("/;SameSite=Strict;");
+    assertThat(cookie.getPath()).isEqualTo("/;SameSite=Lax;");
     assertThat(persistedToken.refreshToken()).isEqualTo(accessToken.refreshToken());
     assertThat(persistedToken.expiresIn()).isEqualTo(accessToken.expiresIn());
     assertThat(persistedToken.expiresAt())
@@ -168,7 +168,7 @@ public class CookieFactoryStoreTest {
     assertThat(cookie.getMaxAge()).isEqualTo(60);
     assertThat(cookie.isHttpOnly()).isEqualTo(true);
     assertThat(cookie.getSecure()).isEqualTo(true);
-    assertThat(cookie.getPath()).isEqualTo("/;SameSite=Strict;");
+    assertThat(cookie.getPath()).isEqualTo("/;SameSite=Lax;");
     assertThat(persistedToken.refreshToken()).isEmpty();
     assertThat(persistedToken.hasRefreshToken()).isFalse();
     assertThat(persistedToken.expiresIn()).isEqualTo(accessToken.expiresIn());

@@ -57,7 +57,7 @@ public class DefaultAuthorizationCodeAuthProvider extends AbstractAuthorizationC
   }
 
   @Override
-  public void redirectUserToAuthorizationEndpoint(ServletResponse servletResponse)
+  public void redirectUserToAuthorizationEndpoint(ServletResponse servletResponse, String returnUrl)
       throws AuthenticationException {
     String authzUrl =
         format(
