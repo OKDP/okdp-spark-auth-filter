@@ -64,9 +64,9 @@ public class PKCEAuthorizationCodeAuthProvider extends AbstractAuthorizationCode
   }
 
   @Override
-  public void redirectUserToAuthorizationEndpoint(ServletResponse servletResponse)
+  public void redirectUserToAuthorizationEndpoint(ServletResponse servletResponse, String returnUrl)
       throws AuthenticationException {
-    AuthState authState = AuthState.randomState();
+    AuthState authState = AuthState.randomState(returnUrl);
     String authzUrl =
         format(
             "%s?client_id=%s&redirect_uri=%s&response_type=%s&scope=%s&state=%s&code_challenge=%s&code_challenge_method=S256",

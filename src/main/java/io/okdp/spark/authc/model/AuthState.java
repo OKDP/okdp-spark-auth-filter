@@ -47,6 +47,9 @@ public class AuthState {
   @JsonProperty("code_challenge")
   private String codeChallenge;
 
+  @JsonProperty("return_url")
+  private String returnUrl;
+
   /** Converts this object to json string */
   public String toJson() {
     return JsonUtils.toJson(this);
@@ -58,10 +61,21 @@ public class AuthState {
    * code_challenge: derived from the code_verifier
    */
   public static AuthState randomState() {
+    return randomState(null);
+  }
+
+  /**
+   * Generates a random state carrying the original request URL so that, after a successful OIDC
+   * round-trip, the filter can redirect the user to the exact deep-link they initially requested
+   * (e.g. {@code /history/<appId>/jobs/}). Per-tab correctness is achieved by encoding the URL in
+   * the encrypted, short-lived state cookie (the sessionStorage approach is unreliable across the
+   * cross-origin hop to the OIDC provider on browsers that partition storage).
+   */
+  public static AuthState randomState(String returnUrl) {
     String state = randomString(16);
     String codeVerifier = randomString(64);
     String codeChallenge = createCodeChallenge(codeVerifier);
-    return new AuthState(state, codeVerifier, codeChallenge);
+    return new AuthState(state, codeVerifier, codeChallenge, returnUrl);
   }
 
   /** Generates a random PKCE code_verifier as stated */

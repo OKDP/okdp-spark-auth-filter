@@ -131,6 +131,24 @@ public class OidcAuthFilterTest implements Constants, CommonTest {
   }
 
   @Test
+  void should_force_reauthentication_when_auth_cookie_is_corrupted()
+      throws IOException, ServletException {
+    HttpServletRequest request = mock(HttpServletRequest.class);
+    HttpServletResponse response = mock(HttpServletResponse.class);
+    FilterChain chain = mock(FilterChain.class);
+    when(request.getRequestURI()).thenReturn("/home");
+    Cookie corrupted = new Cookie(AUTH_COOKE_NAME, "not-a-valid-ciphertext");
+    when(request.getCookies()).thenReturn(new Cookie[] {corrupted});
+
+    oidcAuthFilter.doFilter(request, response, chain);
+
+    verify(chain, never()).doFilter(request, response);
+    ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+    verify(response).sendRedirect(captor.capture());
+    assertThat(captor.getValue()).startsWith("https://dex.okdp.local/dex/auth?");
+  }
+
+  @Test
   void should_run_authentication_flow_authc__on_first_login() throws IOException, ServletException {
     // Given
     HttpServletRequest request = mock(HttpServletRequest.class);
@@ -141,9 +159,11 @@ public class OidcAuthFilterTest implements Constants, CommonTest {
     // When
     oidcAuthFilter.doFilter(request, response, chain);
 
-    // Then - Redirect the user to login and callback with the authz code
-    ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+    // Then - Redirect the user to the OIDC authorization endpoint. With the default (non-PKCE)
+    // provider, the deep-link return URL is not persisted server-side (no state cookie), so the
+    // request is a plain 302 to the authorization endpoint.
     verify(chain, never()).doFilter(request, response);
+    ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
     verify(response).sendRedirect(captor.capture());
     assertEquals(
         format(
@@ -162,8 +182,6 @@ public class OidcAuthFilterTest implements Constants, CommonTest {
     HttpServletResponse response = mock(HttpServletResponse.class);
     FilterChain chain = mock(FilterChain.class);
     when(request.getRequestURI()).thenReturn("/home");
-    StringWriter out = new StringWriter();
-    when(response.getWriter()).thenReturn(new PrintWriter(out));
     // Set the authZ code request parameter
     when(request.getParameter(any(String.class))).thenReturn("kpxblxm2si3x6ofxufgo54h4j");
     // Return the access token from code
@@ -182,9 +200,11 @@ public class OidcAuthFilterTest implements Constants, CommonTest {
             .readToken(captor.getValue().getValue());
     assertNotNull(persistedToken);
 
-    // Then
-    assertThat(out.toString())
-        .isEqualTo("<script type=\"text/javascript\">window.location.href = '/home'</script>");
+    // Then - With the default (non-PKCE) provider there is no state cookie carrying the original
+    // return URL, so the post-callback redirect falls back to the application root.
+    ArgumentCaptor<String> redirectCaptor = ArgumentCaptor.forClass(String.class);
+    verify(response).sendRedirect(redirectCaptor.capture());
+    assertEquals("/", redirectCaptor.getValue());
   }
 
   @Test

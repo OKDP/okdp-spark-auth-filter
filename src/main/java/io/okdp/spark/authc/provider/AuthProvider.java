@@ -30,7 +30,21 @@ public interface AuthProvider {
    * @param servletResponse the {@link ServletResponse}
    * @throws AuthenticationException
    */
-  void redirectUserToAuthorizationEndpoint(ServletResponse servletResponse)
+  default void redirectUserToAuthorizationEndpoint(ServletResponse servletResponse)
+      throws AuthenticationException {
+    redirectUserToAuthorizationEndpoint(servletResponse, null);
+  }
+
+  /**
+   * Redirect the user to the OIDC provider while preserving the original request URL so that the
+   * user is taken back to the exact deep-link they first requested once authenticated.
+   *
+   * @param servletResponse the {@link ServletResponse}
+   * @param returnUrl the original request URL (path + query) to redirect the user to after the OIDC
+   *     round-trip; may be {@code null} or {@code /} to go to the application root
+   * @throws AuthenticationException
+   */
+  void redirectUserToAuthorizationEndpoint(ServletResponse servletResponse, String returnUrl)
       throws AuthenticationException;
 
   /**
