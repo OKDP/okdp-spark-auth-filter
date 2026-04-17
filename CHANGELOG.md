@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.4.3](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.4.2...v1.4.3) (2026-04-17)
+
+
+### Bug Fixes
+
+* preserve deep-link via encrypted state cookie + fix related OIDC issues ([#99](https://github.com/OKDP/okdp-spark-auth-filter/issues/99)) ([4c479a8](https://github.com/OKDP/okdp-spark-auth-filter/commit/4c479a8dc7272923fe3832965af76b1ae20bdd48))
+
+
+### Documentation
+
+* update README with release status badges and OKDP branding ([5ca21b8](https://github.com/OKDP/okdp-spark-auth-filter/commit/5ca21b8c932854e107f7f0a1f96f9035088fe879))
+
+
+### Miscellaneous Chores
+
+* release 1.4.3 ([f3e7ba6](https://github.com/OKDP/okdp-spark-auth-filter/commit/f3e7ba6fa5fb69ef8d45ca1bb03692a76342cdac))
+
 ## [1.4.2](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.4.1...v1.4.2) (2025-10-06)
 
 
