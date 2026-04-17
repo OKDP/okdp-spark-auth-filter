@@ -44,13 +44,13 @@ Please, check the [latest release note](https://github.com/OKDP/okdp-spark-auth-
 Spark 3.x (default jar):
 
 ```shell
-ADD https://repo1.maven.org/maven2/io/okdp/okdp-spark-auth-filter/1.4.2/okdp-spark-auth-filter-1.4.2.jar ${SPARK_HOME}/jars
+ADD https://repo1.maven.org/maven2/io/okdp/okdp-spark-auth-filter/1.4.3/okdp-spark-auth-filter-1.4.3.jar ${SPARK_HOME}/jars
 ```
 
 Spark 4+ (jakarta jar):
 
 ```shell
-ADD https://repo1.maven.org/maven2/io/okdp/okdp-spark-auth-filter/1.4.2/okdp-spark-auth-filter-1.4.2-jakarta.jar ${SPARK_HOME}/jars
+ADD https://repo1.maven.org/maven2/io/okdp/okdp-spark-auth-filter/1.4.3/okdp-spark-auth-filter-1.4.3-jakarta.jar ${SPARK_HOME}/jars
 ```
 
 2. Using Maven
@@ -59,7 +59,7 @@ ADD https://repo1.maven.org/maven2/io/okdp/okdp-spark-auth-filter/1.4.2/okdp-spa
 <dependency>
   <groupId>io.okdp</groupId>
   <artifactId>okdp-spark-auth-filter</artifactId>
-  <version>1.4.2</version>
+  <version>1.4.3</version>
   <!-- Spark 4+: Use jakarta classifier -->
   <!-- <classifier>jakarta</classifier> -->
 </dependency>
@@ -69,11 +69,11 @@ ADD https://repo1.maven.org/maven2/io/okdp/okdp-spark-auth-filter/1.4.2/okdp-spa
 
 Spark 3.x (default jar):
 
-Copy the jar https://repo1.maven.org/maven2/io/okdp/okdp-spark-auth-filter/1.4.2/okdp-spark-auth-filter-1.4.2.jar into `${SPARK_HOME}/jars/` in the different spark nodes
+Copy the jar https://repo1.maven.org/maven2/io/okdp/okdp-spark-auth-filter/1.4.3/okdp-spark-auth-filter-1.4.3.jar into `${SPARK_HOME}/jars/` in the different spark nodes
 
 Spark 4+ (jakarta jar):
 
-Copy the jar https://repo1.maven.org/maven2/io/okdp/okdp-spark-auth-filter/1.4.2/okdp-spark-auth-filter-1.4.2-jakarta.jar into `${SPARK_HOME}/jars/` in the different spark nodes
+Copy the jar https://repo1.maven.org/maven2/io/okdp/okdp-spark-auth-filter/1.4.3/okdp-spark-auth-filter-1.4.3-jakarta.jar into `${SPARK_HOME}/jars/` in the different spark nodes
 
 # Configuration
 
