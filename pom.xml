@@ -62,7 +62,7 @@
     <junit.version>5.10.0</junit.version>
     <junit-pioneer.version>2.2.0</junit-pioneer.version>
     <mockito.version>5.10.0</mockito.version>
-    <assertj.version>3.25.3</assertj.version>
+    <assertj.version>3.27.7</assertj.version>
     <!-- Maven plugins -->
     <maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
     <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
