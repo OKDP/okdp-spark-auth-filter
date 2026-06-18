@@ -78,18 +78,22 @@ Known-good baseline: the default jar validated on Spark 3.5.6 (Scala 2.12, Java 
 
 ### Toolchain tested
 
-| Tool                | Version                                       |
-|---------------------|-----------------------------------------------|
-| Java (build & test) | JDK 11 (CI); compiled to Java 8 bytecode      |
-| Maven               | 3.x                                           |
+The versions below are used to build the project and run the local end-to-end setup. They are not required to simply use the published jar (for that, only a Spark runtime with Java is needed).
+
+| Tool                | Version                                        |
+|---------------------|------------------------------------------------|
+| Java (build & test) | JDK 11 (CI); compiled to Java 8 bytecode       |
+| Maven               | 3.x (build)                                    |
+| Docker              | 28.3.2 (local end-to-end, Compose v2)          |
 | Spark               | 3.5.6 (default jar) / 4.1.0-preview1 (jakarta) |
-| Keycloak            | 26.0 (local OIDC provider)                    |
+| Keycloak            | 26.0 (local OIDC provider)                     |
 
 ## Quick Start
 
-1. Add the filter jar to your Spark distribution (`${SPARK_HOME}/jars`). For Spark 3.x:
+1. Add the filter jar to your Spark distribution (`${SPARK_HOME}/jars`). For Spark 3.x, in your Spark image Dockerfile (`ADD` is a Dockerfile instruction; you can also download and copy the jar into the directory by hand):
 
-   ```shell
+   ```dockerfile
+   # In your Spark image Dockerfile
    ADD https://repo1.maven.org/maven2/io/okdp/okdp-spark-auth-filter/1.4.3/okdp-spark-auth-filter-1.4.3.jar ${SPARK_HOME}/jars
    ```
 
@@ -191,7 +195,7 @@ The parameters most commonly customised are listed below; items marked _(require
 | `scope`                    | `AUTH_SCOPE`                 |                _(required)_                | The scope(s) requested by the authorization request, e.g. `openid+profile+email+roles+offline_access`.                                                                                                 |
 | `use-pkce`                 | `AUTH_USE_PKCE`              |                   `auto`                   | `true`: force PKCE (provider must support it); `false`: disable PKCE for confidential clients; `auto`: detect provider support and use it, otherwise fall back to the standard Authorization Code flow. |
 | `use-id-token`             | `AUTH_USE_IDTOKEN`           |                  `false`                   | `false`: read claims from the access token; `true`: read claims from the id token.                                                                                                                     |
-| `cookie-max-age-minutes`   | `AUTH_COOKE_MAX_AGE_MINUTES` |                `720` (12h)                 | Maximum session cookie duration, in minutes.                                                                                                                                                           |
+| `cookie-max-age-minutes`   | `AUTH_COOKE_MAX_AGE_SECONDS` |                `720` (12h)                 | Maximum session cookie duration, in minutes (the env variable keeps the `AUTH_COOKE_MAX_AGE_SECONDS` name for backward compatibility, but the value is interpreted in minutes).                          |
 | `cookie-cipher-secret-key` | `AUTH_COOKIE_ENCRYPTION_KEY` |                _(required)_                | Cookie encryption key. Generate with `openssl enc -aes-128-cbc -k <PASS PHRASE> -P -md sha1 -pbkdf2`.                                                                                                   |
 | `cookie-is-secure`         | `AUTH_COOKE_IS_SECURE`       |                  `true`                    | Transmit the cookie over HTTPS only. Disable for non-secure (HTTP) connections, otherwise the cookie is not sent.                                                                                       |
 | `user-id`                  | `AUTH_USER_ID`               |                  `email`                   | Identity used by Spark ACLs: `email` (from the token), `sub` (from the token), or `google` (sub with the `account.google.com:` prefix removed).                                                         |
@@ -280,14 +284,14 @@ Then build and run, for Spark 3.x:
 
 ```shell
 mvn clean package
-docker-compose up --build
+docker compose up --build
 ```
 
 For Spark 4+:
 
 ```shell
 mvn clean package
-PROFILE=Jakarta docker-compose up --build
+PROFILE=Jakarta docker compose up --build
 ```
 
 Browse to http://localhost:18080/ and log in with one of the seeded users:
@@ -304,7 +308,7 @@ The filter relies on a local cookie, so remove both the `OKDP_AUTH_SPARK_UI` coo
 Clean up the Docker Compose resources when done:
 
 ```shell
-docker-compose rm -f
+docker compose rm -f
 ```
 
 ## Alternatives
