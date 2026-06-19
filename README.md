@@ -1,382 +1,335 @@
-![Build](https://github.com/okdp/okdp-spark-auth-filter/actions/workflows/ci.yml/badge.svg?branch=main)
-[![Release](https://img.shields.io/github/v/release/okdp/okdp-spark-auth-filter)](https://github.com/okdp/okdp-spark-auth-filter/releases/latest)
-[![License Apache2](https://img.shields.io/hexpm/l/plug.svg)](http://www.apache.org/licenses/LICENSE-2.0)
-<a href="https://okdp.io">
-  <img src="https://okdp.io/logos/okdp-notext.svg" height="20px" style="margin: 0 2px;" />
-</a>
+<p align="center">
+  <a href="https://okdp.io">
+    <img src="https://okdp.io/logos/okdp-inverted.png" alt="OKDP: Open Kubernetes Data Platform" height="180" />
+  </a>
+</p>
 
-[Apache Spark](https://spark.apache.org/) extension filter to enable Oauth2/OpenID Connect based authentication for Spark UIs and Spark History.
+[![ci](https://github.com/OKDP/okdp-spark-auth-filter/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/OKDP/okdp-spark-auth-filter/actions/workflows/ci.yml)
+[![release-please](https://github.com/OKDP/okdp-spark-auth-filter/actions/workflows/release-please.yml/badge.svg)](https://github.com/OKDP/okdp-spark-auth-filter/actions/workflows/release-please.yml)
+[![Release](https://img.shields.io/github/v/release/OKDP/okdp-spark-auth-filter)](https://github.com/OKDP/okdp-spark-auth-filter/releases/latest)
+[![Maven Central](https://img.shields.io/maven-central/v/io.okdp/okdp-spark-auth-filter)](https://central.sonatype.com/artifact/io.okdp/okdp-spark-auth-filter)
+[![Spark](https://img.shields.io/badge/spark-3.1%2B%20%7C%204.x-E25A1C.svg)](https://spark.apache.org/)
+[![Java](https://img.shields.io/badge/java-8%2B-blue.svg)](https://adoptium.net/)
+[![License Apache2](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 
-![Architecture](docs/images/project-components.png)
+# OKDP Spark Auth Filter
 
-The project consists of two main components:
+OAuth2/OpenID Connect authentication and authorization for **Apache Spark** Web UIs and the Spark History Server. It is a lightweight Java servlet filter you drop into the Spark classpath: it authenticates users against any standard OAuth2/OIDC provider using the Authorization Code flow (with PKCE), and optionally maps their email, groups and roles onto native Spark ACLs, without deploying any extra component in front of Spark.
 
-1. `Authentication filter`: Authenticates the user against an Oauth2/OIDC provider by implementing the [Authorization Code grant flow](https://datatracker.ietf.org/doc/html/rfc6749).
-   The filter supports all the providers compliant with Oauth2 and OpenID standards.
-3. `Authorization provider`: An additional optional layer, on top of the `Authentication filter`, authorizes Spark UI/History UI user access 
-by comparing the user email and/or groups and/or roles returned by the Oauth2/OIDC provider during the authentication phase with the configured [spark ACLs](https://spark.apache.org/docs/latest/security.html#authentication-and-authorization)
+## Why this project
 
-# Authorization Grant support matrix
+Apache Spark Web UIs and the Spark History Server expose detailed information about jobs, environment and logs, but their built-in access control is limited: Spark provides the servlet-filter hook (`spark.ui.filters`) and the ACL settings, but ships no ready-to-use OAuth2/OIDC filter. Securing the UIs therefore usually means writing a custom filter or putting a separate reverse-proxy / identity-aware proxy in front of every UI.
 
-| Authorization Grant                   |      Support       | Description                                                                                                                                                                                                                                                   |
-|:--------------------------------------|:------------------:|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `Authorization Code`                  | :heavy_check_mark: | Confidential clients (server side apps/trusted environments) - [Authorization Code standard flow](https://datatracker.ietf.org/doc/html/rfc6749#section-4.1).                                                                                                 |
-| `Authorization Code + PKCE extension` | :heavy_check_mark: | Confidential clients (Server side apps/trusted environments) - [Authorization Code flow with PKCE extension for Confidential clients](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-10). </br> [OAuth 2.1 requirement](https://oauth.net/2.1/). |
-| `Authorization Code + PKCE extension` | :heavy_check_mark: | Public clients (SPAs/Native apps/Untrusted environments use cases) - [Authorization Code flow with PKCE extension for Public clients](https://datatracker.ietf.org/doc/html/rfc7636)                                                                          | 
+As part of the [OKDP](https://okdp.io) (Open Kubernetes Data Platform) ecosystem, this project fills that gap by providing:
 
-The following authorization grants are not suitable, hence not supported:
+- A turnkey OAuth2/OIDC authentication filter that works with any standard-compliant provider, with no additional infrastructure to deploy.
+- An optional authorization layer that translates the identity claims returned by the provider (email, groups, roles) into the native Spark ACLs Spark already understands, so existing `spark.*.acls*` settings keep working.
 
-| Authorization Grant                    | Support | Description                                                                        |
-|:---------------------------------------|:-------:|------------------------------------------------------------------------------------|
-| `Implicit`                             |   NA    | Deprecated (replaced by `Authorization Code + PKCE extension for public clients`). |
-| `Resource Owner Password Credentials`  |   NA    | Not suitable.                                                                      |
-| `Client Credentials`                   |   NA    | Not suitable.                                                                      |
+## What the project does
 
+- Intercepts requests to the Spark UI / History UI and runs the OAuth2/OIDC Authorization Code flow when a request is unauthenticated.
+- Supports both confidential clients (with a client secret) and public clients (PKCE), auto-detecting PKCE support from the provider's well-known configuration.
+- Persists the session in an encrypted, compressed HTTP cookie, so no server-side session store is required (suitable for highly available, multi-replica History Servers).
+- Optionally accepts a pre-issued JWT passed in a configurable HTTP header, validated against the provider's JWKS.
+- Optionally enforces authorization by mapping the user's groups/roles onto Spark view/modify/admin ACLs.
 
-# Installation
+### Supported OAuth2 authorization grants
 
-The different releases are published to [Maven Central Repository](https://repo1.maven.org/maven2/io/okdp/okdp-spark-auth-filter/).
+| Authorization Grant                   |      Support       | Notes                                                                                                            |
+|:--------------------------------------|:------------------:|:-----------------------------------------------------------------------------------------------------------------|
+| `Authorization Code`                  | :heavy_check_mark: | Confidential clients (server-side apps): [RFC 6749 §4.1](https://datatracker.ietf.org/doc/html/rfc6749#section-4.1). |
+| `Authorization Code + PKCE`           | :heavy_check_mark: | Confidential clients: [OAuth 2.1](https://oauth.net/2.1/) recommendation.                                       |
+| `Authorization Code + PKCE`           | :heavy_check_mark: | Public clients (SPAs / native apps): [RFC 7636](https://datatracker.ietf.org/doc/html/rfc7636).                |
+| `Implicit`                            |        N/A         | Deprecated, replaced by Authorization Code + PKCE.                                                               |
+| `Resource Owner Password Credentials` |        N/A         | Not suitable for this use case.                                                                                  |
+| `Client Credentials`                  |        N/A         | Not suitable for this use case (no end user).                                                                   |
 
-Please, check the [latest release note](https://github.com/OKDP/okdp-spark-auth-filter/releases/latest) and download the latest version from [Maven Central Repository](https://central.sonatype.com/artifact/io.okdp/okdp-spark-auth-filter/versions).
+## Architecture
 
-1. Using Docker
+The diagram below shows the request path through the filter: the end user is authenticated against the OAuth2/OIDC provider, the provider returns the user's email and roles/groups, and, when the authorization provider is enabled, Spark grants or denies access by matching those claims against the configured ACLs.
 
-Spark 3.x (default jar):
+<p align="center">
+  <img src="docs/images/project-components.png" alt="OKDP Spark Auth Filter authentication and authorization flow" />
+</p>
 
-```shell
+**Components in the flow:**
+
+- **End user (browser)**: requests a Spark UI or Spark History Server page.
+- **Authentication filter** (`OidcAuthFilter`): intercepts unauthenticated requests, runs the OAuth2/OIDC Authorization Code flow, and stores the resulting session in an encrypted, compressed cookie (`OKDP_AUTH_SPARK_UI`) so no server-side session store is needed.
+- **OAuth2/OIDC provider**: authenticates the user and returns the email and the roles/groups claims; its `/.well-known/openid-configuration` is used to discover the endpoints and the JWKS.
+- **Authorization provider / Spark ACLs** (`OidcGroupMappingServiceProvider`): when enabled, the user's email/groups/roles are checked against the configured Spark ACLs to grant or deny access.
+
+Step by step:
+
+1. The user authenticates against the OAuth2/OIDC provider.
+2. The provider returns the user email and the corresponding roles/groups.
+3. The email and roles/groups are passed to the Spark authorization provider and checked against the configured ACLs.
+4. Access is **granted** when the email/groups/roles match the configured ACLs, and **denied** otherwise.
+
+The filter only relies on standard Spark extension points, the servlet filter chain ([`spark.ui.filters`](https://spark.apache.org/docs/latest/configuration.html)) and the group mapping / ACL mechanism described in the [Spark Security documentation](https://spark.apache.org/docs/latest/security.html#authentication-and-authorization), so it stays decoupled from any specific Spark version.
+
+## Requirements
+
+- **Apache Spark** 3.1.1+ (use the default jar) or Spark 4.x (use the `jakarta` jar).
+- **Java** 8 or later on the Spark runtime.
+- An **OAuth2/OIDC provider** exposing a standard `/.well-known/openid-configuration` endpoint.
+
+Known-good baseline: the default jar validated on Spark 3.5.6 (Scala 2.12, Java 17) and the `jakarta` jar on Spark 4.1.0-preview1 (Scala 2.13, Java 17), against Keycloak 26.0. This is the version set exercised by the local end-to-end setup.
+
+### Toolchain tested
+
+The versions below are used to build the project and run the local end-to-end setup. They are not required to simply use the published jar (for that, only a Spark runtime with Java is needed).
+
+| Tool                | Version                                        |
+|---------------------|------------------------------------------------|
+| Java (build & test) | JDK 11 (CI); compiled to Java 8 bytecode       |
+| Maven               | 3.x (build)                                    |
+| Docker              | 28.3.2 (local end-to-end, Compose v2)          |
+| Spark               | 3.5.6 (default jar) / 4.1.0-preview1 (jakarta) |
+| Keycloak            | 26.0 (local OIDC provider)                     |
+
+## Quick Start
+
+1. Add the filter jar to your Spark distribution (`${SPARK_HOME}/jars`). For Spark 3.x, in your Spark image Dockerfile (`ADD` is a Dockerfile instruction; you can also download and copy the jar into the directory by hand):
+
+   ```dockerfile
+   # In your Spark image Dockerfile
+   ADD https://repo1.maven.org/maven2/io/okdp/okdp-spark-auth-filter/1.4.3/okdp-spark-auth-filter-1.4.3.jar ${SPARK_HOME}/jars
+   ```
+
+2. Enable the filter in `spark-defaults.conf` (minimal authentication-only setup):
+
+   ```properties
+   spark.ui.filters=io.okdp.spark.authc.OidcAuthFilter
+   spark.io.okdp.spark.authc.OidcAuthFilter.param.issuer-uri=<issuer-uri>
+   spark.io.okdp.spark.authc.OidcAuthFilter.param.client-id=<client-id>
+   spark.io.okdp.spark.authc.OidcAuthFilter.param.client-secret=<client-secret>
+   spark.io.okdp.spark.authc.OidcAuthFilter.param.redirect-uri=<spark-ui-home-url>
+   spark.io.okdp.spark.authc.OidcAuthFilter.param.scope=openid+profile+email
+   spark.io.okdp.spark.authc.OidcAuthFilter.param.cookie-cipher-secret-key=<encryption-key>
+   ```
+
+3. Start the Spark History Server (or your Spark application) and open its UI.
+
+### Expected result
+
+Opening the UI redirects you to your provider's login page. After a successful login you are redirected back to the Spark UI and your session is kept in the encrypted `OKDP_AUTH_SPARK_UI` cookie until it expires.
+
+See [Configuration](#configuration) for the full parameter reference and for enabling group/role-based authorization.
+
+## Installation
+
+Releases are published to [Maven Central](https://central.sonatype.com/artifact/io.okdp/okdp-spark-auth-filter/versions). Check the [latest release notes](https://github.com/OKDP/okdp-spark-auth-filter/releases/latest) for the current version. Two artifacts are published per release:
+
+- The **default** jar for Spark 3.x (`javax.servlet`).
+- The **`jakarta`**-classified jar for Spark 4+ (`jakarta.servlet`).
+
+### Using Docker
+
+```dockerfile
+# Spark 3.x (default jar)
 ADD https://repo1.maven.org/maven2/io/okdp/okdp-spark-auth-filter/1.4.3/okdp-spark-auth-filter-1.4.3.jar ${SPARK_HOME}/jars
-```
 
-Spark 4+ (jakarta jar):
-
-```shell
+# Spark 4+ (jakarta jar)
 ADD https://repo1.maven.org/maven2/io/okdp/okdp-spark-auth-filter/1.4.3/okdp-spark-auth-filter-1.4.3-jakarta.jar ${SPARK_HOME}/jars
 ```
 
-2. Using Maven
+### Using Maven
 
 ```xml
 <dependency>
   <groupId>io.okdp</groupId>
   <artifactId>okdp-spark-auth-filter</artifactId>
   <version>1.4.3</version>
-  <!-- Spark 4+: Use jakarta classifier -->
+  <!-- Spark 4+: uncomment to use the jakarta classifier -->
   <!-- <classifier>jakarta</classifier> -->
 </dependency>
 ```
 
-3. Spark on Yarn/Standalone mode
+### Spark on YARN / Standalone
 
-Spark 3.x (default jar):
+Copy the jar into `${SPARK_HOME}/jars/` on every Spark node:
 
-Copy the jar https://repo1.maven.org/maven2/io/okdp/okdp-spark-auth-filter/1.4.3/okdp-spark-auth-filter-1.4.3.jar into `${SPARK_HOME}/jars/` in the different spark nodes
+- Spark 3.x: `okdp-spark-auth-filter-1.4.3.jar`
+- Spark 4+: `okdp-spark-auth-filter-1.4.3-jakarta.jar`
 
-Spark 4+ (jakarta jar):
+(both downloadable from `https://repo1.maven.org/maven2/io/okdp/okdp-spark-auth-filter/1.4.3/`).
 
-Copy the jar https://repo1.maven.org/maven2/io/okdp/okdp-spark-auth-filter/1.4.3/okdp-spark-auth-filter-1.4.3-jakarta.jar into `${SPARK_HOME}/jars/` in the different spark nodes
+### Cleanup
 
-# Configuration
+To remove the filter, delete the jar from `${SPARK_HOME}/jars/` on every node (or rebuild your image without the `ADD` line), remove the `spark.ui.filters`, `spark.user.groups.mapping` and related `spark.io.okdp.spark.authc.*` / ACL properties from your Spark configuration, then restart Spark.
 
-## Create an Oauth2/OIDC client
+## Configuration
 
-Create an Oauth2/OIDC client with an `Authorization Code grant` flow (confidential client).
+The filter is configured through the [`spark.ui.filters`](https://spark.apache.org/docs/latest/configuration.html) parameters (or their equivalent environment variables, convenient for Kubernetes secrets). Each property is set as `spark.io.okdp.spark.authc.OidcAuthFilter.param.<property>`.
 
-Set the redirect URL to a valid spark UI or Spark History UI home page.
+### Create an OAuth2/OIDC client
 
-For [keycloak](https://www.keycloak.org/docs/latest/server_admin/#_oidc_clients):
-1. Confidential Clients:
-   * Access Type: `Confidential`
-   * Standard Flow Enabled: `Enabled`
-   * Implicit Flow Enabled: `Disabled`
-   * Direct Access Grants Enabled: `Disabled`
-2. Public Clients:
-   * Access Type: `Public`
-   * Standard Flow Enabled: `Enabled`
-   * Implicit Flow Enabled: `Disabled`
-   * Direct Access Grants Enabled: `Disabled`
+Create a client using the **Authorization Code** grant flow and set its redirect URL to a valid Spark UI / History UI home page. With [Keycloak](https://www.keycloak.org/docs/latest/server_admin/#_oidc_clients), enable *Standard Flow* and disable *Implicit Flow* and *Direct Access Grants*; use *Confidential* access type for confidential clients (save the `client_secret` in your secret store) or *Public* for public clients. The minimum scope to enable authentication is `openid+profile+email`; add `offline_access` for refresh tokens and `roles`/`groups` for authorization.
 
-Once done, save the `client_id` and `client_secret` (Confidential clients only) into your secret management vault.
+### Parameters
 
-## Configure the authentication filter
+The parameters most commonly customised are listed below; items marked _(required)_ have no default. The full reference is in the collapsible table that follows.
 
-The filter relies on the spark [spark.ui.filters](https://spark.apache.org/docs/latest/configuration.html) configuration property.
+| Property                   | Env variable                 |  Default  | Description                                                                                       |
+|:---------------------------|:-----------------------------|:---------:|:--------------------------------------------------------------------------------------------------|
+| `issuer-uri`               | `AUTH_ISSUER_URI`            | _(required)_ | OIDC provider issuer URL, used to discover the endpoints via `/.well-known/openid-configuration`. |
+| `client-id`                | `AUTH_CLIENT_ID`             | _(required)_ | OAuth2/OIDC client id.                                                                            |
+| `client-secret`            | `AUTH_CLIENT_SECRET`         |     -     | Client secret. Required for confidential clients, omitted for public (PKCE) clients.              |
+| `redirect-uri`             | `AUTH_REDIRECT_URI`          | _(required)_ | Spark UI / History home page, e.g. `https://spark-history.example.com/home`.                      |
+| `scope`                    | `AUTH_SCOPE`                 | _(required)_ | Requested scopes, e.g. `openid+profile+email+roles+offline_access`.                               |
+| `cookie-cipher-secret-key` | `AUTH_COOKIE_ENCRYPTION_KEY` | _(required)_ | Key used to encrypt the session cookie. Generate with `openssl enc -aes-128-cbc -k <PASS PHRASE> -P -md sha1 -pbkdf2`. |
+| `cookie-is-secure`         | `AUTH_COOKE_IS_SECURE`       |  `true`   | Send the cookie over HTTPS only. Set to `false` for plain HTTP setups, otherwise the cookie is dropped. |
+| `use-pkce`                 | `AUTH_USE_PKCE`              |  `auto`   | `auto` detects PKCE support from the provider; `true`/`false` force it.                           |
+| `user-id`                  | `AUTH_USER_ID`               |  `email`  | Identity claim mapped to Spark ACLs: `email`, `sub` or `google`.                                  |
 
-| Property                   | Equivalent env variable       |                 Default                  | Description                                                                                                                                                                                                                                                         |
-|:---------------------------|-------------------------------|:----------------------------------------:|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `issuer-uri`               | `AUTH_ISSUER_URI`             |                    -                     | OIDC Provider issuer URL</br>This is used to discover OIDC endpoints                                                                                                                                                                                                |
-| `client-id`                | `AUTH_CLIENT_ID`              |                    -                     | The Oauth2/OIDC client Id                                                                                                                                                                                                                                           |
-| `client-secret`            | `AUTH_CLIENT_SECRET`          |                    -                     | The Oauth2/OIDC client secret </br> * Mandatory for Confidential Clients. </br> * Optional for Public clients. </br>                                                                                                                                                |
-| `redirect-uri`             | `AUTH_REDIRECT_URI`           |                    -                     | Spark UI/History home page</br>ex.: https://spark-history.example.com/home                                                                                                                                                                                          |
-| `scope`                    | `AUTH_SCOPE`                  |                    -                     | The scope(s) requested by the Authorization Request.</br>Example: `openid+profile+email+roles+offline_access`                                                                                                                                                       |
-| `use-pkce`                 | `AUTH_USE_PKCE`               |                   auto                   | * `true`: Force the usage of PKCE (The OIDC provider should support it). </br>* `false`: Disable the usage of PKCE for confidential clients. </br> * `auto`: Detect if OIDC provider supports PKCE and use it, otherwise use Authorization Code standard flow.      |
-| `use-id-token`             | `AUTH_USE_IDTOKEN`            |                   false                  | * `false`: consume claims from `accessToken`. </br> * `true`: consume claims from `idToken` |
-| `cookie-max-age-minutes`   | `AUTH_COOKE_MAX_AGE_MINUTES`  |                 12 * 60                  | The maximum spark-cookie cookie duration in minutes                                                                                                                                                                    |
-| `cookie-cipher-secret-key` | `AUTH_COOKIE_ENCRYPTION_KEY`  |                    -                     | Cookie encryption key</br> Can be generated using: `openssl enc -aes-128-cbc -k <PASS PHRASE> -P -md sha1 -pbkdf2`                                                                                                                                                  |
-| `cookie-is-secure`         | `AUTH_COOKE_IS_SECURE`        |                   true                   | When enabled, the cookie is transmitted over a secure connection only (HTTPS).</br> Disable the option if your run with a non secure connection (HTTP)                                                                                                              |
-| `user-id`                  | `AUTH_USER_ID`                |                  email                   | * `email`: set the id seen by spark acls as the email filled in the access token. </br> * `sub`: set the id seen by spark acls as the sub filled in the access. </br> * `google`: set the id to the sub sent by google but remove the prefix 'account.google.com:'. |
-| `jwt-header`               | `JWT_HEADER`                  |                jwt_token                 | Header that may contain the JWT Token that will be used for authentication. If not present, it will fall back with the default autentication workflow with a redirection on the login page.                                                                         |
-| `jwt-header-signing-alg`   | `JWT_HEADER_SIGNING_ALG`      |               RS256, ES256               | Signature algorithm used to verify the JWT Token provided.                                                                                                                                                               |
-| `jwt-header-issuer`        | `JWT_HEADER_ISSUER`           | issuer-uri from well known configuration | Issuer if different from the default issuer uri retrieved from the well known configuration fetched with 'issuer-uri' parameter.                                                                                                                                    |
-| `jwt-header-jwks-uri`      | `JWT_HEADER_JWKS_URI`         |  jwks uri from well known configuration  | JWKS URI used to retrieve the key needed to verify the JWT token signature. By default will use the JWKS URI filled in the well known configuration fetched with 'issuer-uri' parameter.                                                                            |
-| `jwt-extra-group-claim`    | `JWT_EXTRA_GROUP_CLAIM`       |                    -                     | if not empty, the groups will be extended with this new claim, this claim must be a string array.                                                                                                                                                                   |
-| `ignore-refresh-token`     | `IGNORE_REFRESH_TOKEN`        |                  false                   | * `true`: Ignore refresh token storage in the cookie (Prevent exceeding the cookie size limit). </br>* `false`: Store the refresh token in the cookie.                                                                                                              |
+<details>
+<summary><b>Full parameter reference</b></summary>
 
-> [!NOTE]
-> 1. `issuer-uri` property or `AUTH_ISSUER_URI` env variable
->    
->     Try to access the endpoint `<issuer-uri>/.well-known/openid-configuration` (public access) to check if the `issuer-uri` is valid. 
-> 
->     This should return the different authentication endpoints (authorization, access token, user info endpoints, supported scopes etc.).
-> 
->     For keycloack, the default `issuer-uri` is at `https://<keycloak.example.com>/auth/realms/master/` and `https://<keycloak.example.com>/auth/realms/master/.well-known/openid-configuration` is the well known configuration endpoint.
-> 
-> 
-> 2. `cookie-cipher-secret-key` property or `AUTH_COOKIE_ENCRYPTION_KEY` env variable
-> 
->    Generate the cookie encryption key by issuing the command:
->
->    ```shell 
->    openssl enc -aes-128-cbc -k <YOUR_PASS_PHRASE> -P -md sha1 -pbkdf2
->    ```
-> 
->       
-> 3. `scope` property or `AUTH_SCOPE` env variable
-> 
->    The minimum required scope to turn on authentication is: `openid+profile+email`
->
->    Add offline scope `offline_access` to enable the refresh token
->
->    Add the `roles` and/or `groups` scope to enable role/groups based authorization
->
->    It is not necessary to add groups and/or roles `scope` if you only need the authentication, and you don't need the authorization.
->
->    N.B.: Please, note that the `groups` scope is not supported by the most OIDC providers. You can check the supported scopes at `<issuer-uri>/.well-known/openid-configuration` url.
-> 
->    N.B.: Keycloack supports returning the groups for a user by adding `Group Membership mapper` to your client
-> 
-> 
-> 4. `use-pkce` property or `AUTH_USE_PKCE` env variable
-> 
->    The default value is `auto` to automatically detect if the OIDC provider supports PKCE.
-> 
->    When the OIDC provider supports PKCE, the filter uses the PKCE flow automatically.
-> 
->    Other values: `true` or `false` to enforce the property manually.
->    
->    N.B.: The OIDC provider must support PKCE extension in order to use Public Clients.
-> 
-> 
-> 5. `cookie-is-secure` property or `AUTH_COOKE_IS_SECURE` env variable
-> 
->     It's recommended to secure the connection to your spark UIs by enabling HTTPS. Although, the spark cookie is encrypted, it's recommended to send it over an encrypted connection.
-> 
->     By default, the property is enabled. Disable the property if your connection is not secure otherwise the cookie will not be sent
-> 
+| Property                   | Env variable                 |                  Default                   | Description                                                                                                                                                                                            |
+|:---------------------------|:-----------------------------|:------------------------------------------:|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `issuer-uri`               | `AUTH_ISSUER_URI`            |                _(required)_                | OIDC provider issuer URL, used to discover the OIDC endpoints.                                                                                                                                          |
+| `client-id`                | `AUTH_CLIENT_ID`             |                _(required)_                | The OAuth2/OIDC client id.                                                                                                                                                                             |
+| `client-secret`            | `AUTH_CLIENT_SECRET`         |                     -                      | The OAuth2/OIDC client secret. Mandatory for confidential clients, optional for public clients.                                                                                                        |
+| `redirect-uri`             | `AUTH_REDIRECT_URI`          |                _(required)_                | Spark UI / History home page, e.g. `https://spark-history.example.com/home`.                                                                                                                           |
+| `scope`                    | `AUTH_SCOPE`                 |                _(required)_                | The scope(s) requested by the authorization request, e.g. `openid+profile+email+roles+offline_access`.                                                                                                 |
+| `use-pkce`                 | `AUTH_USE_PKCE`              |                   `auto`                   | `true`: force PKCE (provider must support it); `false`: disable PKCE for confidential clients; `auto`: detect provider support and use it, otherwise fall back to the standard Authorization Code flow. |
+| `use-id-token`             | `AUTH_USE_IDTOKEN`           |                  `false`                   | `false`: read claims from the access token; `true`: read claims from the id token.                                                                                                                     |
+| `cookie-max-age-minutes`   | `AUTH_COOKE_MAX_AGE_SECONDS` |                `720` (12h)                 | Maximum session cookie duration, in minutes (the env variable keeps the `AUTH_COOKE_MAX_AGE_SECONDS` name for backward compatibility, but the value is interpreted in minutes).                          |
+| `cookie-cipher-secret-key` | `AUTH_COOKIE_ENCRYPTION_KEY` |                _(required)_                | Cookie encryption key. Generate with `openssl enc -aes-128-cbc -k <PASS PHRASE> -P -md sha1 -pbkdf2`.                                                                                                   |
+| `cookie-is-secure`         | `AUTH_COOKE_IS_SECURE`       |                  `true`                    | Transmit the cookie over HTTPS only. Disable for non-secure (HTTP) connections, otherwise the cookie is not sent.                                                                                       |
+| `user-id`                  | `AUTH_USER_ID`               |                  `email`                   | Identity used by Spark ACLs: `email` (from the token), `sub` (from the token), or `google` (sub with the `account.google.com:` prefix removed).                                                         |
+| `jwt-header`               | `JWT_HEADER`                 |                `jwt_token`                 | Header that may carry a pre-issued JWT. If absent, the default redirect-based login flow is used.                                                                                                       |
+| `jwt-header-signing-alg`   | `JWT_HEADER_SIGNING_ALG`     |               `RS256, ES256`               | Signature algorithm(s) accepted when verifying the JWT header.                                                                                                                                          |
+| `jwt-header-issuer`        | `JWT_HEADER_ISSUER`          |  issuer from the well-known configuration  | Override the expected issuer for the JWT header.                                                                                                                                                       |
+| `jwt-header-jwks-uri`      | `JWT_HEADER_JWKS_URI`        | JWKS URI from the well-known configuration | JWKS URI used to verify the JWT header signature.                                                                                                                                                      |
+| `jwt-extra-group-claim`    | `JWT_EXTRA_GROUP_CLAIM`      |                     -                      | Additional string-array claim to merge into the user's groups.                                                                                                                                         |
+| `ignore-refresh-token`     | `IGNORE_REFRESH_TOKEN`       |                  `false`                   | `true`: do not store the refresh token in the cookie (avoids exceeding the cookie size limit); `false`: store it.                                                                                       |
 
-### Basic configuration
+</details>
 
-The filter can be enabled either by setting the properties globally in the `spark-defaults.properties`
+### Enabling authorization (optional)
 
-```properties
-spark.ui.filters=io.okdp.spark.authc.OidcAuthFilter
-spark.io.okdp.spark.authc.OidcAuthFilter.param.issuer-uri=<issuer-uri>
-spark.io.okdp.spark.authc.OidcAuthFilter.param.client-id=<client-id>
-
-# Comment this line if your client-id is public and your OIDC provider support PKCE
-spark.io.okdp.spark.authc.OidcAuthFilter.param.client-secret=<client-secret>
-
-spark.io.okdp.spark.authc.OidcAuthFilter.param.redirect-uri=<redirect-uri>
-spark.io.okdp.spark.authc.OidcAuthFilter.param.scope=<scope>
-
-# Keep the default value 'auto'
-# spark.io.okdp.spark.authc.OidcAuthFilter.param.use-pkce=<true|false|auto>
-
-spark.io.okdp.spark.authc.OidcAuthFilter.param.cookie-max-age-minutes=480
-spark.io.okdp.spark.authc.OidcAuthFilter.param.cookie-cipher-secret-key=<cookie-cipher-secret-key>
-spark.io.okdp.spark.authc.OidcAuthFilter.param.cookie-is-secure=<true|false>
-spark.io.okdp.spark.authc.OidcAuthFilter.param.user-id=<sub|email>
-```
-
-Or during the job submission like the following:
-
-```shell
-spark-submit  --conf spark.ui.filters=io.okdp.spark.authc.OidcAuthFilter \
---conf spark.io.okdp.spark.authc.OidcAuthFilter.param.issuer-uri=<issuer-uri> \
---conf spark.io.okdp.spark.authc.OidcAuthFilter.param.client-id=<client-id>         \
---conf spark.io.okdp.spark.authc.OidcAuthFilter.param.client-secret=<client-secret> \
---conf spark.io.okdp.spark.authc.OidcAuthFilter.param.redirect-uri=<redirect-uri>   \
---conf spark.io.okdp.spark.authc.OidcAuthFilter.param.scope=<scope>                 \
---conf spark.io.okdp.spark.authc.OidcAuthFilter.param.cookie-max-age-minutes=480    \
---conf spark.io.okdp.spark.authc.OidcAuthFilter.param.cookie-cipher-secret-key=<cookie-cipher-secret-key> \
---conf spark.io.okdp.spark.authc.OidcAuthFilter.param.cookie-is-secure=<true|false>  \
---conf spark.io.okdp.spark.authc.OidcAuthFilter.param.user-id=<sub|email>  \
---class ...
-```
-
-Remove the following configuration if your client id is public and your OIDC provider supports PKCE:
-
-```shell
---conf spark.io.okdp.spark.authc.OidcAuthFilter.param.client-secret=<client-secret>
-```
-
-### Kubernetes configuration
-
-The properties can also be passed by their equivalent env variables. 
-
-You can save the client_id, client secret and the cookie encryption key in a kubernetes secret and reference it as an env variable like the following:
-
-```yaml
-env:
-- name: AUTH_ISSUER_URI
-  value: <issuer-uri>
-- name: AUTH_CLIENT_ID
-  valueFrom:
-  secretKeyRef:
-- name: AUTH_REDIRECT_URI
-  value: <redirect-uri>
-- name: AUTH_SCOPE
-  value: openid+profile+email+roles+offline_access
-# Keep the default value of AUTH_USE_PKCE as auto, other values: true, false
-#- name: AUTH_USE_PKCE
-#  value: auto
-# Remove the AUTH_CLIENT_SECRET if your client id is public and your OIDC provider supports PKCE
-- name: AUTH_CLIENT_SECRET
-  valueFrom:
-  secretKeyRef:
-- name: AUTH_COOKIE_ENCRYPTION_KEY
-  valueFrom:
-  secretKeyRef:
-```
-
-
-## Configure the authorization provider (optional)
-### Overview
-
-An example of a raw access token returned by the Oauth2/OIDC provider during a successful authentication is like the following:
-
-```json
-{
-   "access_token": "eyJhbGciOiJI6-auxZsE6...",
-   "token_type": "bearer",
-   "expires_in": 86399,
-   "refresh_token": "ChlvaWJmNXBuaG1rdWN0e...",
-   "id_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjBkZWEw..."
-}
-```
-
-The token payload after [decoding](https://jwt.io/) the `access_token` is as follows:
-
-```json
-{
-   "iss": "<issuer-uri>",
-   "sub": "CgNib2ISBGxkYXA",
-   "aud": "<client-id>",
-   "exp": 1708476719,
-   "iat": 1708390319,
-   "at_hash": "x_kKHrjGfnSfkjDwIGPPbg",
-   "email": "bob@example.org",
-   "email_verified": true,
-   "groups": ["admins", "team1", "/team2"],
-   "roles": ["role-team1", "admin-role"],
-   "name": "bob"
-}
-```
-
-The `"email"`, `"groups"` and/or `"roles"` can be mapped in Spark ACLs to consequently grant or denies access.
-
-### Configuration
-
-A basic configuration properties to enable the provider globally, in `spark-defaults.conf`, are:
+To authorize access based on the provider's `email`, `groups` and `roles` claims, register the group mapping provider and enable Spark ACLs in `spark-defaults.conf`:
 
 ```properties
 spark.user.groups.mapping=io.okdp.spark.authz.OidcGroupMappingServiceProvider
 spark.acls.enable=true
 spark.history.ui.acls.enable=true
-# Comma separated list of admin groups (view all applications)
+# Comma-separated list of admin groups (can view all applications)
 spark.history.ui.admin.acls.groups=admins,team1
 ```
 
-These properties should be set before the spark history starts.
+You can then grant access per user, group or role through the standard Spark ACL properties (`spark.admin.acls`, `spark.modify.acls`, `spark.ui.view.acls` and their `.groups` variants). These must be set before the History Server starts.
 
-You can also decide globally which users, roles and/or groups you grant access to your applications individually in spark history UI 
-or your spark ui by adding the properties in `spark-defaults.conf`:
+### Kubernetes
 
-Select the properties to enable the authorization for:
+Every property has an environment-variable equivalent (see the tables above), so the client id, client secret and encryption key can be sourced from a Kubernetes `Secret` and injected as environment variables, for example `AUTH_ISSUER_URI`, `AUTH_CLIENT_ID`, `AUTH_CLIENT_SECRET`, `AUTH_REDIRECT_URI`, `AUTH_SCOPE` and `AUTH_COOKIE_ENCRYPTION_KEY`.
 
-```properties
-#Comma separated list of groups
-spark.admin.acls.groups=admins,admin-role
-spark.modify.acls.groups=team1
-spark.ui.view.acls.groups=/team2,role-team1
+## Components
 
-# Comma separated list of users
-spark.admin.acls=bob@example.org
-spark.modify.acls=bob@example.org
-spark.ui.view.acls=bob@example.org,bill@example.org
-```
+The project is made of two independent pieces. You can use the authentication filter alone, or add the authorization provider on top of it.
 
-Or at spark job submission time (select the properties to enable):
+| Component | Spark configuration | Description |
+|---|---|---|
+| **Authentication filter**: `io.okdp.spark.authc.OidcAuthFilter` | `spark.ui.filters` | Authenticates users against the OAuth2/OIDC provider with the Authorization Code grant flow, and persists the session in an encrypted cookie. |
+| **Authorization provider** _(optional)_: `io.okdp.spark.authz.OidcGroupMappingServiceProvider` | `spark.user.groups.mapping` | Authorizes access by matching the email/groups/roles returned by the provider against the configured [Spark ACLs](https://spark.apache.org/docs/latest/security.html#authentication-and-authorization). |
+
+## OKDP Integration
+
+This filter is the authentication and authorization layer for Apache Spark Web UIs in the [OKDP](https://okdp.io) (Open Kubernetes Data Platform) ecosystem. It secures the OKDP Spark History Server and integrates with OKDP spark-web-proxy, which exposes running Spark application UIs alongside the History Server.
+
+## Troubleshooting
+
+| Symptom                                                                                                 | Likely cause and fix                                                                                                                                            |
+|:--------------------------------------------------------------------------------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Login succeeds but you are immediately logged out / no session                                          | `cookie-is-secure=true` while serving over plain HTTP: the browser drops the cookie. Set `cookie-is-secure=false` for non-HTTPS setups.                         |
+| `NoClassDefFoundError` / `ClassNotFoundException` on `javax.servlet` or `jakarta.servlet` under Spark 4 | Wrong artifact for your Spark version. Use the `-jakarta` jar for Spark 4+, the default jar for Spark 3.x.                                                       |
+| Forced re-authentication after a config change                                                          | The `cookie-cipher-secret-key` changed (or differs between nodes). Use the same key on every node; old cookies can no longer be decrypted and trigger re-login. |
+| Cookie too large / request rejected by the server                                                       | The refresh token inflates the cookie beyond the ~4KB limit. Set `ignore-refresh-token=true`.                                                                   |
+| Groups/roles not enforced                                                                               | The `groups`/`roles` scope is missing or unsupported by the provider. Check the scopes listed at `<issuer-uri>/.well-known/openid-configuration`.               |
+| Filter fails to start / cannot discover endpoints                                                       | Invalid `issuer-uri`. Verify that `<issuer-uri>/.well-known/openid-configuration` is publicly reachable and returns the OIDC endpoints.                          |
+
+## Build
+
+The project builds with Maven and JDK 11. A single `package` produces both the default jar (Spark 3.x) and the `jakarta`-classified jar (Spark 4+):
 
 ```shell
-spark-submit -conf spark.admin.acls.groups=admins,admin-role \
---conf spark.modify.acls.groups=team1 \
---conf spark.ui.view.acls.groups=/team2,role-team1 \
---conf spark.admin.acls=bob@example.org \
---conf spark.modify.acls=bob@example.org \
---conf spark.ui.view.acls=bob@example.org,bill@example.org \
-  ...
+mvn clean package
 ```
 
-# Test locally using Docker Compose 
+Code style is enforced with [Spotless](https://github.com/diffplug/spotless) (Google Java Format); apply it before committing:
 
-### Update Hosts File
+```shell
+mvn spotless:apply
+```
 
-Add the following entry to your `/etc/hosts`:
+## Test
+
+Run the unit tests:
+
+```shell
+mvn -ntp test
+```
+
+### End-to-end testing with Docker Compose
+
+A local setup with Keycloak and a Spark History Server is provided. First, add the following entry to your `/etc/hosts`:
+
 ```
 127.0.0.1       keycloak
 ```
-### Build and Run
-#### For Spark 3.x:
+
+Then build and run, for Spark 3.x:
 
 ```shell
 mvn clean package
-docker-compose up --build
+docker compose up --build
 ```
 
-#### For Spark 4+:
+For Spark 4+:
 
 ```shell
 mvn clean package
-PROFILE=Jakarta docker-compose up --build
+PROFILE=Jakarta docker compose up --build
 ```
 
-Browse to: http://localhost:18080/
+Browse to http://localhost:18080/ and log in with one of the seeded users:
 
-| User  | Password  | Group      |
-|-------|-----------|------------|
-| dev1  | user      | developers |
-| dev2  | user      | developers |
-| view1 | user      | viewers    |
-| adm1  | user      | admins     |
+| User  | Password | Group      |
+|-------|----------|------------|
+| dev1  | user     | developers |
+| dev2  | user     | developers |
+| view1 | user     | viewers    |
+| adm1  | user     | admins     |
 
+The filter relies on a local cookie, so remove both the `OKDP_AUTH_SPARK_UI` cookie and the Keycloak cookie from your browser between logins. For more details see [docker-compose.yml](docker-compose.yml), [.env](.env) and the [.local](.local) setup.
 
-The Spark Auth Filter relies on a local cookie for authentication. Remove both the `OKDP_AUTH_SPARK_UI` cookie and the local Keycloak cookie from your local browser at each re-login.
-
-For more details, check [docker-compose.yml](docker-compose.yml), [env](.env) and [local setup](.local)
-
-### Clean up:
+Clean up the Docker Compose resources when done:
 
 ```shell
-docker-compose rm -f
+docker compose rm -f
 ```
 
-# Use cases, limitation and future work
+## Alternatives
 
-The filter is designed to address a basic use cases where you don't need to deploy extra components in order to secure your Spark History UIs.
+Other approaches to securing the Spark UIs, and when each is a better fit:
 
-The filter can also be used to secure Spark UIs, but note that, in real world kubernetes integration, each spark application submission creates its own ingress endpoint. With hundreds of running spark applications, it becomes very difficult to track all the endpoints and configure them.
+| Alternative | When to consider it |
+|---|---|
+| Custom `spark.ui.filters` servlet filter (e.g. Hadoop's Kerberos/SPNEGO `AuthenticationFilter`) | You are in a Kerberos environment, or you already maintain a custom filter and don't need OAuth2/OIDC. |
+| Identity-aware reverse proxy ([oauth2-proxy](https://github.com/oauth2-proxy/oauth2-proxy), [Pomerium](https://www.pomerium.com/), ingress-level OIDC) | You want authentication handled outside Spark and don't need to map identities onto Spark ACLs; adds a component to deploy and operate per UI. |
+| [OKDP spark-web-proxy](https://github.com/OKDP/spark-web-proxy) | Complementary rather than an alternative: it focuses on live discovery and proxying of running Spark application UIs alongside the History Server. |
 
-Another limitation, is that depending on the oidc provider, the number of redirect URIs per oidc client can be limited and the usage of URIs pattern is also prohibited by [OAuth 2.1](https://oauth.net/2.1/).
+This filter targets the case where you want OAuth2/OIDC authentication (and optional ACL authorization) embedded directly in Spark, with no extra infrastructure.
 
-A new central portal UI is under development to simplify dynamic discovery, log/monitoring tracking and provides shortcuts to easily navigate and filter the spark applications.
+## Contributing & License
 
+Contributions follow the [OKDP contribution guide](https://github.com/OKDP/.github/blob/main/CONTRIBUTING.md). Released under the [Apache License 2.0](LICENSE).
+
+---
+
+**Built 🚀 for the OKDP Community**
+<a href="https://okdp.io">
+  <img src="https://okdp.io/logos/okdp-notext.svg" height="20px" style="margin: 0 2px;" />
+</a>
