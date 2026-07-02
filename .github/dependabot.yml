@@ -24,7 +24,7 @@ updates:
       day: "monday"
       time: "06:00"
       timezone: "Europe/Paris"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 0
     groups:
       maven-plugins:
         patterns:
@@ -45,7 +45,7 @@ updates:
       day: "monday"
       time: "06:30"
       timezone: "Europe/Paris"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
     groups:
       github-actions:
         patterns:
@@ -58,7 +58,7 @@ updates:
       day: "monday"
       time: "07:00"
       timezone: "Europe/Paris"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
     groups:
       docker-compose:
         patterns:
