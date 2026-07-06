@@ -2,6 +2,7 @@
   "extra-files": [
     "README.md"
   ],
+  "draft-pull-request": true,
   "packages": {
     ".": {
       "changelog-path": "CHANGELOG.md",
