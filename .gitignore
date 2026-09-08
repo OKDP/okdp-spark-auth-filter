@@ -35,3 +35,4 @@ dependency-reduced-pom.xml
 ### Others
 tmp/
 .spark-events/
+.omp/
