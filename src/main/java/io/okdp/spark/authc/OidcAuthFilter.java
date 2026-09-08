@@ -394,9 +394,13 @@ public class OidcAuthFilter implements Filter, Constants {
     // Get the oidc authorization code if the user is authenticated
     Optional<String> maybeAuthzCode = ofNullable(servletRequest.getParameter("code"));
     if (!maybeAuthzCode.isPresent()) {
-      // The previous redirect was maybe failed (prevent infinite loop)
-      Try.of(() -> checkAuthLogin(servletRequest))
-          .onException(e -> sendError(servletResponse, e.getHttpStatusCode(), e.getMessage()));
+      try {
+        checkAuthLogin(servletRequest);
+      } catch (AuthenticationException e) {
+        log.warn("OIDC authorization failed: {}", e.getMessage(), e);
+        sendError(servletResponse, e.getHttpStatusCode(), e.getMessage());
+        return;
+      }
       // Capture the original URL (path + query) so that, after the OIDC round-trip, the user is
       // redirected back to the exact deep-link they first requested (e.g. /history/<appId>/jobs/).
       // The return URL is carried inside the encrypted, short-lived state cookie next to the PKCE
@@ -431,9 +435,14 @@ public class OidcAuthFilter implements Filter, Constants {
 
       // Exchange the obtained 'code' with an access token by issuing a request against the oidc
       // provider
-      AccessToken accessToken =
-          Try.of(() -> authProvider.requestAccessToken(servletRequest, servletResponse))
-              .onException(e -> sendError(servletResponse, e.getHttpStatusCode(), e.getMessage()));
+      AccessToken accessToken;
+      try {
+        accessToken = authProvider.requestAccessToken(servletRequest, servletResponse);
+      } catch (AuthenticationException e) {
+        log.warn("Unable to retrieve access token from OIDC provider: {}", e.getMessage(), e);
+        sendError(servletResponse, e.getHttpStatusCode(), e.getMessage());
+        return;
+      }
       PersistedToken persistedToken =
           authProvider.httpSecurityConfig().toPersistedToken(accessToken);
       log.info(
@@ -444,16 +453,19 @@ public class OidcAuthFilter implements Filter, Constants {
           persistedToken.userInfo().roles(),
           persistedToken.userInfo().groups());
 
-      Try.of(
-              () ->
-                  ofNullable(persistedToken.id())
-                      .orElseThrow(
-                          () ->
-                              new AuthenticationException(
-                                  HttpStatus.SC_UNAUTHORIZED,
-                                  "Your oidc provider returned an empty user id and may have expired your oidc session! "
-                                      + "Please try to delete your oidc provider cookie from the browser and try again!")))
-          .onException(e -> sendError(servletResponse, e.getHttpStatusCode(), e.getMessage()));
+      try {
+        ofNullable(persistedToken.id())
+            .orElseThrow(
+                () ->
+                    new AuthenticationException(
+                        HttpStatus.SC_UNAUTHORIZED,
+                        "Your oidc provider returned an empty user id and may have expired your oidc session! "
+                            + "Please try to delete your oidc provider cookie from the browser and try again!"));
+      } catch (AuthenticationException e) {
+        log.warn("Unable to authenticate user: {}", e.getMessage(), e);
+        sendError(servletResponse, e.getHttpStatusCode(), e.getMessage());
+        return;
+      }
 
       Cookie cookie = authProvider.httpSecurityConfig().sessionStore().save(persistedToken);
       ((HttpServletResponse) servletResponse).addCookie(cookie);

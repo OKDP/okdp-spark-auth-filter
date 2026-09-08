@@ -27,6 +27,7 @@ import static scala.collection.JavaConverters.asScalaSet;
 
 import io.okdp.spark.authc.common.CommonTest;
 import io.okdp.spark.authc.config.Constants;
+import io.okdp.spark.authc.exception.AuthenticationException;
 import io.okdp.spark.authc.model.PersistedToken;
 import io.okdp.spark.authc.model.WellKnownConfiguration;
 import io.okdp.spark.authc.provider.impl.DefaultAuthorizationCodeAuthProvider;
@@ -205,6 +206,29 @@ public class OidcAuthFilterTest implements Constants, CommonTest {
     ArgumentCaptor<String> redirectCaptor = ArgumentCaptor.forClass(String.class);
     verify(response).sendRedirect(redirectCaptor.capture());
     assertEquals("/", redirectCaptor.getValue());
+  }
+
+  @Test
+  void should_stop_authentication_flow_when_token_exchange_fails()
+      throws IOException, ServletException {
+    // Given
+    HttpServletRequest request = mock(HttpServletRequest.class);
+    HttpServletResponse response = mock(HttpServletResponse.class);
+    FilterChain chain = mock(FilterChain.class);
+    when(request.getRequestURI()).thenReturn("/home");
+    when(request.getParameter(any(String.class))).thenReturn("authorization-code");
+    doThrow(new AuthenticationException(401, "OIDC token exchange failed"))
+        .when(oidcAuthProvider)
+        .requestAccessToken(any(), any());
+
+    // When
+    oidcAuthFilter.doFilter(request, response, chain);
+
+    // Then
+    verify(response).sendError(401, "OIDC token exchange failed");
+    verify(response, never()).addCookie(any(Cookie.class));
+    verify(response, never()).sendRedirect(any(String.class));
+    verify(chain, never()).doFilter(any(), any());
   }
 
   @Test
