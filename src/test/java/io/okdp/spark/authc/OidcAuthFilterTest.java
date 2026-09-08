@@ -32,6 +32,7 @@ import io.okdp.spark.authc.model.WellKnownConfiguration;
 import io.okdp.spark.authc.provider.impl.DefaultAuthorizationCodeAuthProvider;
 import io.okdp.spark.authc.utils.JsonUtils;
 import io.okdp.spark.authz.OidcGroupMappingServiceProvider;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -113,6 +114,20 @@ public class OidcAuthFilterTest implements Constants, CommonTest {
     field.setAccessible(true);
     oidcAuthProvider = spy((DefaultAuthorizationCodeAuthProvider) field.get(oidcAuthFilter));
     field.set(oidcAuthFilter, oidcAuthProvider);
+  }
+
+  @Test
+  void should_close_jwt_header_jwk_source_when_destroyed()
+      throws NoSuchFieldException, IllegalAccessException, IOException {
+    Closeable jwkSource = mock(Closeable.class);
+    Field field = oidcAuthFilter.getClass().getDeclaredField("jwtHeaderJwkSource");
+    field.setAccessible(true);
+    field.set(oidcAuthFilter, jwkSource);
+
+    oidcAuthFilter.destroy();
+
+    verify(jwkSource).close();
+    assertThat(field.get(oidcAuthFilter)).isNull();
   }
 
   @Test
