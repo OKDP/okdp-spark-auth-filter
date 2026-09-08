@@ -59,6 +59,7 @@ import io.okdp.spark.authc.utils.PreconditionsUtils;
 import io.okdp.spark.authc.utils.TokenUtils;
 import io.okdp.spark.authc.utils.exception.Try;
 import io.okdp.spark.authz.OidcGroupMappingServiceProvider;
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -85,6 +86,7 @@ public class OidcAuthFilter implements Filter, Constants {
 
   private AuthProvider authProvider;
   private ConfigurableJWTProcessor<SecurityContext> jwtProcessor = new DefaultJWTProcessor<>();
+  private Closeable jwtHeaderJwkSource;
   private String jwtHeader;
 
   @Override
@@ -262,6 +264,10 @@ public class OidcAuthFilter implements Filter, Constants {
       // Retrieve the JWKS needed to verify the token
       JWKSource<SecurityContext> keySource =
           JWKSourceBuilder.create(new URL(jwtHeaderJWKSUri)).retrying(true).build();
+      if (!(keySource instanceof Closeable)) {
+        throw new ServletException("JWT header JWK source must be closeable");
+      }
+      jwtHeaderJwkSource = (Closeable) keySource;
       // Define the signing algorithm supported for verifying the token
       // We retrieve this information from the well known configuration
       Set<JWSAlgorithm> expectedJWSAlg =
@@ -467,6 +473,15 @@ public class OidcAuthFilter implements Filter, Constants {
 
   @Override
   public void destroy() {
+    Closeable source = jwtHeaderJwkSource;
+    jwtHeaderJwkSource = null;
+    if (source != null) {
+      try {
+        source.close();
+      } catch (IOException e) {
+        log.warn("Unable to close JWT header JWK source", e);
+      }
+    }
     log.info("OIDC Auth filter destroyed");
   }
 }
