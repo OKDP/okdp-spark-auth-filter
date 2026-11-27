@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.5.0](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.4.3...v1.5.0) (2026-11-27)
+
+
+### Features
+
+* added conventional commits guard rails ([49e71cf](https://github.com/OKDP/okdp-spark-auth-filter/commit/49e71cf3d70c59ce8631312aefd63242e18160a5))
+
+
+### Bug Fixes
+
+* allow release please from fork ([1565c39](https://github.com/OKDP/okdp-spark-auth-filter/commit/1565c39f91bc0a5109cec856a582060870ebecc4))
+* close Nimbus JWK refresh executor on filter shutdown ([f05bafc](https://github.com/OKDP/okdp-spark-auth-filter/commit/f05bafc7b851656d881949451b2294806bb94f0c))
+* stop after OIDC token exchange failure ([2102a02](https://github.com/OKDP/okdp-spark-auth-filter/commit/2102a02e8d1c59b8e5c3dcb41448157b989359af))
+
+
+### Documentation
+
+* rewrite README following the OKDP README template ([#104](https://github.com/OKDP/okdp-spark-auth-filter/issues/104)) ([6a27bd4](https://github.com/OKDP/okdp-spark-auth-filter/commit/6a27bd470ca32a88a8103b73ce386b97b22980d8))
+
 ## [1.4.3](https://github.com/OKDP/okdp-spark-auth-filter/compare/v1.4.2...v1.4.3) (2026-04-17)
 
 
